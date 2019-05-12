@@ -1,0 +1,521 @@
+['snowmelt', 'crop', 'icemelt', 'pref', 'arnob', 'interf', 'reces', 'runoff', 'ccm', 'normalstoragelimit', 'lakeafactor', 'lakeevafactor']
+('temperatureinkelvin', 'True')
+temperatureinkelvin
+('gridsizeuserdefined', 'True')
+gridsizeuserdefined
+('calc_evaporation', 'False')
+calc_evaporation
+('includeirrigation', 'True')
+includeirrigation
+('includewaterdemand', 'True')
+includewaterdemand
+('usingallocsegments', 'False')
+usingallocsegments
+('limitabstraction', 'False')
+limitabstraction
+('calc_environflow', 'False')
+calc_environflow
+('use_environflow', 'False')
+use_environflow
+('preferentialflow', 'False')
+preferentialflow
+('capillarrise', 'True')
+capillarrise
+('includerunoffconcentration', 'True')
+includerunoffconcentration
+('includewaterbodies', 'False')
+includewaterbodies
+('includerouting', 'True')
+includerouting
+('inflow', 'False')
+inflow
+('writenetcdfstack', 'True')
+writenetcdfstack
+('reportmap', 'True')
+reportmap
+('reporttss', 'True')
+reporttss
+('calcwaterbalance', 'False')
+calcwaterbalance
+('sumwaterbalance', 'False')
+sumwaterbalance
+('pcraster', 'False')
+pcraster
+('pathroot', 'P:/ene.yssp/Yaoping_Wang/2018/CWatM')
+pathroot
+('pathout', '$(PathRoot)/CWATM_output5min/')
+pathout
+('pathmaps', '$(PathRoot)/CWATM_data/cwatm_input5min/')
+pathmaps
+('pathmeteo', '$(PathRoot)/CWATM_data/climate/wfdei')
+pathmeteo
+('institution', 'IIASA')
+institution
+('title', 'Global Water Model - WATCH WDFEI - Indus 5min')
+title
+('metanetcdffile', '$(FILE_PATHS:PathRoot)/CWATM/source/metaNetcdf.xml')
+metanetcdffile
+('maskmap', '$(FILE_PATHS:PathMaps)/areamaps/indus_area_corr.map')
+maskmap
+('gauges', '72.88 34.92')
+gauges
+('gaugeslocal', 'True')
+gaugeslocal
+('stepstart', '1/1/1990')
+stepstart
+('spinup', '01/01/1995')
+spinup
+('stepend', '31/12/2010')
+stepend
+('load_initial', 'False')
+load_initial
+('initload', '$(FILE_PATHS:PathRoot)/CWATM_init/Indus5min_19891231.nc')
+initload
+('save_initial', 'False')
+save_initial
+('initsave', '$(FILE_PATHS:PathRoot)/CWATM_init/Indus5min_20101231.nc')
+initsave
+('stepinit', '31/12/2010')
+stepinit
+('out_dir', 'P:/ene.yssp/Yaoping_Wang/2018/CWatM\\calibration/calibration_indus5min\\catchments\\25_029')
+out_dir
+('out_tss_daily', 'discharge')
+out_tss_daily
+('out_tss_monthavg', 'discharge')
+out_tss_monthavg
+('out_tss_totaltot', 'totalET')
+out_tss_totaltot
+('snowmeltcoef', '0.00260906170906')
+snowmeltcoef
+('icemeltcoef', '0.00437776235355')
+icemeltcoef
+('crop_correct', '0.932584968479')
+crop_correct
+('soildepth_factor', '1.0')
+soildepth_factor
+('preferentialflowconstant', '3.90897872879')
+preferentialflowconstant
+('arnobeta_add', '0.586807010898')
+arnobeta_add
+('factor_interflow', '3.0')
+factor_interflow
+('recessioncoeff_factor', '7.81854880811')
+recessioncoeff_factor
+('runoffconc_factor', '3.58429659133')
+runoffconc_factor
+('manningsn', '2.77475629854')
+manningsn
+('normalstoragelimit', '0.266814807949')
+normalstoragelimit
+('lakeafactor', '0.71548475397')
+lakeafactor
+('lakeevafactor', '3.82102623831')
+lakeevafactor
+('ldd', '$(FILE_PATHS:PathMaps)/routing/ldd.map')
+ldd
+('elevation', '$(FILE_PATHS:PathMaps)/landsurface/topo/dem.map')
+elevation
+('elevationstd', '$(FILE_PATHS:PathMaps)/landsurface/topo/elvstd.map')
+elevationstd
+('cellarea', '$(FILE_PATHS:PathMaps)/landsurface/topo/cellarea.map')
+cellarea
+('meteomapssamescale', 'False')
+meteomapssamescale
+('downscale_wordclim_tavg', '$(FILE_PATHS:PathMaps)/meteo/worldclim_tavg.nc')
+downscale_wordclim_tavg
+('downscale_wordclim_tmin', '$(FILE_PATHS:PathMaps)/meteo/worldclim_tmin.nc')
+downscale_wordclim_tmin
+('downscale_wordclim_tmax', '$(FILE_PATHS:PathMaps)/meteo/worldclim_tmax.nc')
+downscale_wordclim_tmax
+('downscale_wordclim_prec', '$(FILE_PATHS:PathMaps)/meteo/worldclim_prec.nc')
+downscale_wordclim_prec
+('precipitationmaps', '$(FILE_PATHS:PathMeteo)/pr*')
+precipitationmaps
+('tavgmaps', '$(FILE_PATHS:PathMeteo)/tavg*')
+tavgmaps
+('e0maps', '$(FILE_PATHS:PathOut)/EWRef_daily.nc')
+e0maps
+('etmaps', '$(FILE_PATHS:PathOut)/ETRef_daily.nc')
+etmaps
+('precipitation_coversion', '86.4')
+precipitation_coversion
+('evaporation_coversion', '1.00')
+evaporation_coversion
+('albedo', 'True')
+albedo
+('albedomaps', '$(FILE_PATHS:PathMaps)/landsurface/albedo/albedo.nc')
+albedomaps
+('albedosoil', '0.15')
+albedosoil
+('albedowater', '0.05')
+albedowater
+('albedocanopy', '0.23')
+albedocanopy
+('usehuss', 'False')
+usehuss
+('tminmaps', '$(FILE_PATHS:PathMeteo)/tmin*')
+tminmaps
+('tmaxmaps', '$(FILE_PATHS:PathMeteo)/tmax*')
+tmaxmaps
+('psurfmaps', '$(FILE_PATHS:PathMeteo)/ps*')
+psurfmaps
+('rhsmaps', '$(FILE_PATHS:PathMeteo)/hurs*')
+rhsmaps
+('windmaps', '$(FILE_PATHS:PathMeteo)/wind*')
+windmaps
+('rsdsmaps', '$(FILE_PATHS:PathMeteo)/rsds*')
+rsdsmaps
+('rsdlmaps', '$(FILE_PATHS:PathMeteo)/rlds*')
+rsdlmaps
+('out_dir', '$(FILE_PATHS:PathOut)')
+out_dir
+('numbersnowlayers', '7')
+numbersnowlayers
+('glaciertransportzone', '3')
+glaciertransportzone
+('temperaturelapserate', '0.0065')
+temperaturelapserate
+('snowfactor', '1.0')
+snowfactor
+('snowseasonadj', '0.001')
+snowseasonadj
+('tempmelt', '1.0')
+tempmelt
+('tempsnow', '1.0')
+tempsnow
+('snowwaterequivalent', '0.45')
+snowwaterequivalent
+('afrost', '0.97')
+afrost
+('kfrost', '0.57')
+kfrost
+('frostindexthreshold', '56')
+frostindexthreshold
+('cropgroupnumber', '$(FILE_PATHS:PathMaps)/soil/cropgrp.nc')
+cropgroupnumber
+('pathtopo', '$(FILE_PATHS:PathMaps)/landsurface/topo')
+pathtopo
+('pathsoil1', '$(FILE_PATHS:PathMaps)/soil')
+pathsoil1
+('tanslope', '$(PathTopo)/tanslope.map')
+tanslope
+('slopelength', '$(PathTopo)/slopeLength.map')
+slopelength
+('relativeelevation', '$(PathTopo)/dzRel.nc')
+relativeelevation
+('ksat1', '$(PathSoil1)/ksat1.map')
+ksat1
+('ksat2', '$(PathSoil1)/ksat2.map')
+ksat2
+('ksat3', '$(PathSoil1)/ksat3.map')
+ksat3
+('alpha1', '$(PathSoil1)/alpha1.map')
+alpha1
+('alpha2', '$(PathSoil1)/alpha2.map')
+alpha2
+('alpha3', '$(PathSoil1)/alpha3.map')
+alpha3
+('lambda1', '$(PathSoil1)/lambda1.map')
+lambda1
+('lambda2', '$(PathSoil1)/lambda2.map')
+lambda2
+('lambda3', '$(PathSoil1)/lambda3.map')
+lambda3
+('thetas1', '$(PathSoil1)/thetas1.map')
+thetas1
+('thetas2', '$(PathSoil1)/thetas2.map')
+thetas2
+('thetas3', '$(PathSoil1)/thetas3.map')
+thetas3
+('thetar1', '$(PathSoil1)/thetar1.map')
+thetar1
+('thetar2', '$(PathSoil1)/thetar2.map')
+thetar2
+('thetar3', '$(PathSoil1)/thetar3.map')
+thetar3
+('percolationimp', '$(PathSoil1)/percolationImp.map')
+percolationimp
+('maxgwcaprise', '5.0')
+maxgwcaprise
+('mincropkc', '0.2')
+mincropkc
+('mintopwaterlayer', '0.0')
+mintopwaterlayer
+('stordepth1', '$(PathSoil1)/storageDepth1.map')
+stordepth1
+('stordepth2', '$(PathSoil1)/storageDepth2.map')
+stordepth2
+('pathlandcover', '$(FILE_PATHS:PathMaps)/landsurface')
+pathlandcover
+('covertypes', 'forest, grassland, irrPaddy, irrNonPaddy, sealed, water')
+covertypes
+('covertypesshort', 'f, g, i, n, s, w')
+covertypesshort
+('fractionlandcover', '$(PathLandcover)/fractionLandcover.nc')
+fractionlandcover
+('dynamiclandcover', 'True')
+dynamiclandcover
+('fixlandcoveryear', '1961')
+fixlandcoveryear
+('pathforest', '$(FILE_PATHS:PathMaps)/landcover/forest')
+pathforest
+('pathsoil1', '$(FILE_PATHS:PathMaps)/soil')
+pathsoil1
+('forest_arnobeta', '0.2')
+forest_arnobeta
+('forest_ksat1', '$(PathSoil1)/forest_ksat1.map')
+forest_ksat1
+('forest_ksat2', '$(PathSoil1)/forest_ksat2.map')
+forest_ksat2
+('forest_ksat3', '$(PathSoil1)/ksat3.map')
+forest_ksat3
+('forest_alpha1', '$(PathSoil1)/forest_alpha1.map')
+forest_alpha1
+('forest_alpha2', '$(PathSoil1)/forest_alpha2.map')
+forest_alpha2
+('forest_alpha3', '$(PathSoil1)/alpha3.map')
+forest_alpha3
+('forest_lambda1', '$(PathSoil1)/forest_lambda1.map')
+forest_lambda1
+('forest_lambda2', '$(PathSoil1)/forest_lambda2.map')
+forest_lambda2
+('forest_lambda3', '$(PathSoil1)/lambda3.map')
+forest_lambda3
+('forest_thetas1', '$(PathSoil1)/forest_thetas1.map')
+forest_thetas1
+('forest_thetas2', '$(PathSoil1)/forest_thetas2.map')
+forest_thetas2
+('forest_thetas3', '$(PathSoil1)/thetas3.map')
+forest_thetas3
+('forest_thetar1', '$(PathSoil1)/forest_thetar1.map')
+forest_thetar1
+('forest_thetar2', '$(PathSoil1)/forest_thetar2.map')
+forest_thetar2
+('forest_thetar3', '$(PathSoil1)/thetar3.map')
+forest_thetar3
+('forest_mininterceptcap', '0.001')
+forest_mininterceptcap
+('forest_cropdeplfactor', '0.0')
+forest_cropdeplfactor
+('forest_fracvegcover', '$(PathForest)/fracVegCover.map')
+forest_fracvegcover
+('forest_rootfraction1', '$(PathForest)/rootFraction1.map')
+forest_rootfraction1
+('forest_maxrootdepth', '$(PathForest)/maxRootDepth.map')
+forest_maxrootdepth
+('forest_minsoildepthfrac', '$(PathForest)/minSoilDepthFrac.map')
+forest_minsoildepthfrac
+('forest_cropcoefficientnc', '$(PathForest)/cropCoefficientForest_10days.nc')
+forest_cropcoefficientnc
+('forest_interceptcapnc', '$(PathForest)/interceptCapForest10days.nc')
+forest_interceptcapnc
+('pathgrassland', '$(FILE_PATHS:PathMaps)/landcover/grassland')
+pathgrassland
+('grassland_arnobeta', '0.0')
+grassland_arnobeta
+('grassland_mininterceptcap', '0.001')
+grassland_mininterceptcap
+('grassland_cropdeplfactor', '0.0')
+grassland_cropdeplfactor
+('grassland_fracvegcover', '$(PathGrassland)/fracVegCover.map')
+grassland_fracvegcover
+('grassland_rootfraction1', '$(PathGrassland)/rootFraction1.map')
+grassland_rootfraction1
+('grassland_maxrootdepth', '$(PathGrassland)/maxRootDepth.map')
+grassland_maxrootdepth
+('grassland_minsoildepthfrac', '$(PathGrassland)/minSoilDepthFrac.map')
+grassland_minsoildepthfrac
+('grassland_cropcoefficientnc', '$(PathGrassland)/cropCoefficientGrassland_10days.nc')
+grassland_cropcoefficientnc
+('grassland_interceptcapnc', '$(PathGrassland)/interceptCapGrassland10days.nc')
+grassland_interceptcapnc
+('pathirrpaddy', '$(FILE_PATHS:PathMaps)/landcover/irrPaddy')
+pathirrpaddy
+('irrpaddy_arnobeta', '0.2')
+irrpaddy_arnobeta
+('irrpaddy_mininterceptcap', '0.001')
+irrpaddy_mininterceptcap
+('irrpaddy_cropdeplfactor', '0.0')
+irrpaddy_cropdeplfactor
+('irrpaddy_fracvegcover', '$(PathIrrPaddy)/fracVegCover.map')
+irrpaddy_fracvegcover
+('irrpaddy_rootfraction1', '$(PathIrrPaddy)/rootFraction1.map')
+irrpaddy_rootfraction1
+('irrpaddy_maxrootdepth', '$(PathIrrPaddy)/maxRootDepth.map')
+irrpaddy_maxrootdepth
+('irrpaddy_minsoildepthfrac', '$(PathIrrPaddy)/minSoilDepthFrac.map')
+irrpaddy_minsoildepthfrac
+('irrpaddy_cropcoefficientnc', '$(PathIrrPaddy)/cropCoefficientirrPaddy_10days.nc')
+irrpaddy_cropcoefficientnc
+('irrpaddy_maxtopwater', '0.05')
+irrpaddy_maxtopwater
+('pathirrnonpaddy', '$(FILE_PATHS:PathMaps)/landcover/irrNonPaddy')
+pathirrnonpaddy
+('irrnonpaddy_arnobeta', '0.2')
+irrnonpaddy_arnobeta
+('irrnonpaddy_mininterceptcap', '0.001')
+irrnonpaddy_mininterceptcap
+('irrnonpaddy_cropdeplfactor', '0.0')
+irrnonpaddy_cropdeplfactor
+('irrnonpaddy_fracvegcover', '$(PathIrrNonPaddy)/fracVegCover.map')
+irrnonpaddy_fracvegcover
+('irrnonpaddy_rootfraction1', '$(PathIrrNonPaddy)/rootFraction1.map')
+irrnonpaddy_rootfraction1
+('irrnonpaddy_maxrootdepth', '$(PathIrrNonPaddy)/maxRootDepth.map')
+irrnonpaddy_maxrootdepth
+('irrnonpaddy_minsoildepthfrac', '$(PathIrrNonPaddy)/minSoilDepthFrac.map')
+irrnonpaddy_minsoildepthfrac
+('irrnonpaddy_cropcoefficientnc', '$(PathIrrNonPaddy)/cropCoefficientirrNonPaddy_10days.nc')
+irrnonpaddy_cropcoefficientnc
+('pathsealed', '$(FILE_PATHS:PathMaps)/landcover/sealed')
+pathsealed
+('sealed_mininterceptcap', '0.001')
+sealed_mininterceptcap
+('pathwater', '$(FILE_PATHS:PathMaps)/landcover/water')
+pathwater
+('water_mininterceptcap', '0.0')
+water_mininterceptcap
+('pathgroundwater', '$(FILE_PATHS:PathMaps)/groundwater')
+pathgroundwater
+('recessioncoeff', '$(PathGroundwater)/recessionCoeff.map')
+recessioncoeff
+('specificyield', '$(PathGroundwater)/specificYield.map')
+specificyield
+('ksataquifer', '$(PathGroundwater)/kSatAquifer.map')
+ksataquifer
+('pathwaterdemand', '$(FILE_PATHS:PathMaps)/landsurface/waterDemand')
+pathwaterdemand
+('allocsegments', '$(PathWaterdemand)/catchx.nc')
+allocsegments
+('domesticwaterdemandfile', '$(PathWaterdemand)/domesticWaterDemand.nc')
+domesticwaterdemandfile
+('domestictimemonthly', 'True')
+domestictimemonthly
+('domesticwithdrawalvarname', 'domesticWithdrawal')
+domesticwithdrawalvarname
+('domesticconsuptionvarname', 'domesticConsumption')
+domesticconsuptionvarname
+('industrywaterdemandfile', '$(PathWaterdemand)/industryWaterDemand.nc')
+industrywaterdemandfile
+('industrytimemonthly', 'True')
+industrytimemonthly
+('industrywithdrawalvarname', 'industryWithdrawal')
+industrywithdrawalvarname
+('industryconsuptionvarname', 'industryConsumption')
+industryconsuptionvarname
+('uselivestock', 'True')
+uselivestock
+('livestockwaterdemandfile', '$(PathWaterdemand)/livestockWaterDemand.nc')
+livestockwaterdemandfile
+('livestocktimemonthly', 'True')
+livestocktimemonthly
+('livestockvarname', 'livestockConsumption')
+livestockvarname
+('irrnonpaddy_efficiency', '0.8')
+irrnonpaddy_efficiency
+('irrpaddy_efficiency', '0.8')
+irrpaddy_efficiency
+('irrigation_returnfraction', '0.5')
+irrigation_returnfraction
+('swabstractionfrac', '0.5')
+swabstractionfrac
+('averagedischarge', '$(FILE_PATHS:PathOut)/discharge_totalavg_indus5min.nc')
+averagedischarge
+('averagebaseflow', '$(FILE_PATHS:PathOut)/baseflow_totalavg_indus5min.nc')
+averagebaseflow
+('baseflowinm', 'True')
+baseflowinm
+('forest_runoff_peaktime', '1.0')
+forest_runoff_peaktime
+('grassland_runoff_peaktime', '0.5')
+grassland_runoff_peaktime
+('irrpaddy_runoff_peaktime', '0.5')
+irrpaddy_runoff_peaktime
+('irrnonpaddy_runoff_peaktime', '0.5')
+irrnonpaddy_runoff_peaktime
+('sealed_runoff_peaktime', '0.15')
+sealed_runoff_peaktime
+('water_runoff_peaktime', '0.01')
+water_runoff_peaktime
+('interflow_runoff_peaktime', '1.0')
+interflow_runoff_peaktime
+('baseflow_runoff_peaktime', '2.0')
+baseflow_runoff_peaktime
+('pathrouting', '$(FILE_PATHS:PathMaps)/routing')
+pathrouting
+('noroutingsteps', '10')
+noroutingsteps
+('chanbeta', '0.6')
+chanbeta
+('changrad', '$(PathRouting)/kinematic/changrad.nc')
+changrad
+('changradmin', '0.0001')
+changradmin
+('chanman', '$(PathRouting)/kinematic/chanman.nc')
+chanman
+('chanlength', '$(PathRouting)/kinematic/chanleng.nc')
+chanlength
+('chanwidth', '$(PathRouting)/kinematic/chanwidth.nc')
+chanwidth
+('chandepth', '$(PathRouting)/kinematic/chanheight.nc')
+chandepth
+('pathlakesres', '$(FILE_PATHS:PathMaps)/routing/lakesreservoirs')
+pathlakesres
+('useresandlakes', 'True')
+useresandlakes
+('dynamiclakesres', 'True')
+dynamiclakesres
+('fixlakesresyear', '1961')
+fixlakesresyear
+('waterbodyid', '$(PathLakesRes)/lakesResID.nc')
+waterbodyid
+('waterbodytyp', '$(PathLakesRes)/lakesResType.nc')
+waterbodytyp
+('waterbodydis', '$(PathLakesRes)/lakesResDis.nc')
+waterbodydis
+('waterbodyarea', '$(PathLakesRes)/lakesResArea.nc')
+waterbodyarea
+('usesmalllakes', 'True')
+usesmalllakes
+('smalllakesres', '$(PathLakesRes)/smallLakesRes.nc')
+smalllakesres
+('smallwaterbodydis', '$(PathLakesRes)/smallLakesResDis.nc')
+smallwaterbodydis
+('waterbodyvolres', '$(PathLakesRes)/lakesResVolRes.nc')
+waterbodyvolres
+('waterbodyyear', '$(PathLakesRes)/lakesResYear.nc')
+waterbodyyear
+('conservativestoragelimit', '0.1')
+conservativestoragelimit
+('floodstoragelimit', '0.9')
+floodstoragelimit
+('adjust_normal_flood', '0.5')
+adjust_normal_flood
+('minoutflowq', '0.2')
+minoutflowq
+('normaloutflowq', '1.0')
+normaloutflowq
+('nondamagingoutflowq', '4.0')
+nondamagingoutflowq
+('in_dir', '$(FILE_PATHS:PathRoot)/in')
+in_dir
+('inflowpoints', '$(In_Dir)/in.map')
+inflowpoints
+('qints', 'mm.tss')
+qints
+('calc_ef_after', 'True')
+calc_ef_after
+('efdis', '$(FILE_PATHS:PathOut)/discharge_totalavg.nc')
+efdis
+('cut_ef_map', 'False')
+cut_ef_map
+('environmentalflowfile', '$(FILE_PATHS:PathOut)/MQ90_12month.nc')
+environmentalflowfile
+('out_dir', 'P:/ene.yssp/Yaoping_Wang/2018/CWatM\\calibration/calibration_indus5min\\catchments\\25_029')
+out_dir
+('out_dir', 'P:/ene.yssp/Yaoping_Wang/2018/CWatM\\calibration/calibration_indus5min\\catchments\\25_029')
+out_dir
+('out_tss_daily', 'discharge')
+out_tss_daily
+('out_tss_monthavg', 'discharge')
+out_tss_monthavg
