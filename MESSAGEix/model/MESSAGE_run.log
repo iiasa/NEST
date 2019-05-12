@@ -1,0 +1,435 @@
+
+--- Job MESSAGE_run.gms Start 05/09/19 16:59:17 24.9.1 r63795 WEX-WEI x86 64bit/MS Windows
+GAMS 24.9.1   Copyright (C) 1987-2017 GAMS Development. All rights reserved
+Licensee: Small MUD - 5 User License Generic             S160905:1044AO-GEN
+          IIASA, Information and Communication Technologies Dep.      DC216
+          License for teaching and research at degree granting institutions
+--- Starting compilation
+--- MESSAGE_run.gms(58) 2 Mb
+--- .MESSAGE/model_setup.gms(67) 2 Mb
+--- ..MESSAGE/auxiliary_settings.gms(37) 2 Mb
+--- .MESSAGE/model_setup.gms(70) 2 Mb
+--- ..version.gms(18) 2 Mb
+--- .MESSAGE/model_setup.gms(71) 2 Mb
+--- ..MESSAGE/version_check.gms(8) 2 Mb
+--- GDXin=C:\Users\vinca\Documents\Github\indus_ix\model\data\MSGdata_multiple_SDG_EF.T_IT.T_EM.T_S6.T_S7.T_S2.T.gdx
+--- ..MESSAGE/version_check.gms(17) 3 Mb
+--- .MESSAGE/model_setup.gms(74) 3 Mb
+--- ..MESSAGE/sets_maps_def.gms(354) 3 Mb
+--- .MESSAGE/model_setup.gms(75) 3 Mb
+--- ..MESSAGE/parameter_def.gms(613) 3 Mb
+--- .MESSAGE/model_setup.gms(78) 3 Mb
+--- ..MESSAGE/data_load.gms(9) 3 Mb
+--- GDXin=C:\Users\vinca\Documents\Github\indus_ix\model\data\MSGdata_multiple_SDG_EF.T_IT.T_EM.T_S6.T_S7.T_S2.T.gdx
+--- ..MESSAGE/data_load.gms(58) 17 Mb
+--- ...includes/period_parameter_assignment.gms(129) 17 Mb
+--- ..MESSAGE/data_load.gms(140) 17 Mb
+--- .MESSAGE/model_setup.gms(81) 17 Mb
+--- ..MESSAGE/scaling_investment_costs.gms(173) 17 Mb
+--- .MESSAGE/model_setup.gms(87) 17 Mb
+--- ..MESSAGE/model_core.gms(1262) 17 Mb
+--- .MESSAGE/model_setup.gms(87) 17 Mb
+--- MESSAGE_run.gms(65) 17 Mb
+--- .MESSAGE/model_solve.gms(55) 17 Mb
+--- MESSAGE_run.gms(105) 17 Mb
+--- .MESSAGE/reporting.gms(28) 17 Mb
+--- MESSAGE_run.gms(115) 17 Mb
+--- Starting execution: elapsed 0:00:00.093
+--- MESSAGE_run.gms(1181) 18 Mb
+    +++ Importing data from 'data\MSGdata_multiple_SDG_EF.T_IT.T_EM.T_S6.T_S7.T_S2.T.gdx'... +++
+--- MESSAGE_run.gms(1196) 18 Mb
+--- GDXin=C:\Users\vinca\Documents\Github\indus_ix\model\data\MSGdata_multiple_SDG_EF.T_IT.T_EM.T_S6.T_S7.T_S2.T.gdx
+--- MESSAGE_run.gms(2921) 667 Mb
+    +++ Solve the perfect-foresight version of MESSAGEix +++
+--- Generating LP model MESSAGE_LP
+--- MESSAGE_run.gms(2027) 1140 Mb  7 secs
+--- MESSAGE_run.gms(2047) 1201 Mb  7 secs
+--- MESSAGE_run.gms(2795) 2916 Mb  17 secs
+--- MESSAGE_run.gms(2572) 2927 Mb  6 secs
+--- MESSAGE_run.gms(2922) 2927 Mb  4 secs
+---   927,760 rows  1,111,747 columns  33,805,974 non-zeroes
+--- Executing CPLEX: elapsed 0:00:49.180
+--- MESSAGE_run.gms(2922) 2927 Mb  5 secs
+
+IBM ILOG CPLEX   24.9.1 r63795 Released Aug 30, 2017 WEI x86 64bit/MS Windows 
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.7.1.0
+
+Reading parameter(s) from "C:\Users\vinca\Documents\Github\indus_ix\model\cplex.opt"
+>>  * CPLEX LP solution method
+>>  * see https://www.gams.com/help/topic/gams.doc/solvers/cplex/index.html#CPLEXlpmethod
+>>  * 0     Automatic
+>>  * 1     Primal Simplex
+>>  * 2     Dual Simplex
+>>  * 3     Network Simplex
+>>  * 4     Barrier
+>>  * 5     Sifting
+>>  * 6     Concurrent
+>> 
+>>  lpmethod = 6
+>>  threads = 4
+>>  epopt 1e-6
+Finished reading from "C:\Users\vinca\Documents\Github\indus_ix\model\cplex.opt"
+Reading data...
+Starting Cplex...
+Space for names approximately 110.88 Mb
+Use option 'names no' to turn use of names off
+CPXPARAM_Advance                                 0
+CPXPARAM_Simplex_Limits_Iterations               100000000
+CPXPARAM_TimeLimit                               1000000
+CPXPARAM_LPMethod                                6
+CPXPARAM_Threads                                 4
+CPXPARAM_Parallel                                1
+CPXPARAM_Tune_TimeLimit                          200000
+Parallel mode: deterministic, using up to 4 threads for concurrent optimization.
+Row 'COMMODITY_BALANCE_FULL(IND_1.freshwater.industry_secondary.2020.1)' infeasible, all entries at implied bounds.
+Presolve time = 2.11 sec. (1349.74 ticks)
+LP status(3): infeasible
+Cplex Time: 2.11sec (det. 1352.40 ticks)
+Rerunning with presolve turned off and solving with LPMETHOD=0
+CPXPARAM_Advance                                 2
+CPXPARAM_Simplex_Limits_Iterations               100000000
+CPXPARAM_Preprocessing_Presolve                  0
+CPXPARAM_TimeLimit                               1000000
+CPXPARAM_LPMethod                                1
+CPXPARAM_Threads                                 4
+CPXPARAM_Parallel                                1
+CPXPARAM_Tune_TimeLimit                          200000
+
+Iteration log . . .
+Iteration:     1    Scaled infeas =       3459162.232474
+Iteration:  9435    Scaled infeas =       2431689.511540
+Iteration: 11410    Scaled infeas =       1489286.155715
+Iteration: 12558    Scaled infeas =        756153.923504
+Iteration: 13970    Scaled infeas =        637879.454555
+Iteration: 14876    Scaled infeas =        550754.340973
+Iteration: 15665    Scaled infeas =        454891.893014
+Iteration: 16346    Scaled infeas =        394349.284788
+Iteration: 16924    Scaled infeas =        341028.111014
+Iteration: 17529    Scaled infeas =        319255.856324
+Iteration: 18185    Scaled infeas =        300373.909280
+Iteration: 18832    Scaled infeas =        285696.193255
+Iteration: 19420    Scaled infeas =        271968.999904
+Iteration: 20056    Scaled infeas =        261496.592228
+Iteration: 20627    Scaled infeas =        257553.747130
+Iteration: 21170    Scaled infeas =        255653.438123
+Iteration: 21735    Scaled infeas =        251574.524457
+Iteration: 22290    Scaled infeas =        246581.802101
+Iteration: 22942    Scaled infeas =        245038.663785
+Iteration: 23461    Scaled infeas =        229671.496050
+Iteration: 23985    Scaled infeas =        221897.152696
+Iteration: 24475    Scaled infeas =        216325.833327
+Iteration: 24981    Scaled infeas =        213898.220306
+Iteration: 25434    Scaled infeas =        211558.118561
+Iteration: 25896    Scaled infeas =        206957.441507
+Iteration: 26324    Scaled infeas =        205578.980689
+Iteration: 26740    Scaled infeas =        204896.167592
+Iteration: 27292    Scaled infeas =        204125.255049
+Iteration: 27771    Scaled infeas =        201896.805370
+Elapsed time = 13.11 sec. (10104.54 ticks, 27771 iterations)
+Iteration: 28206    Scaled infeas =        199580.638848
+Iteration: 28734    Scaled infeas =        197977.141152
+Iteration: 29226    Scaled infeas =        197267.222553
+Iteration: 29760    Scaled infeas =        195259.919790
+Iteration: 30221    Scaled infeas =        194285.772289
+Iteration: 30687    Scaled infeas =        193639.927114
+Iteration: 31147    Scaled infeas =        191902.176079
+Iteration: 31667    Scaled infeas =        188985.567471
+Iteration: 32215    Scaled infeas =        187302.167123
+Iteration: 32653    Scaled infeas =        184994.463652
+Iteration: 33118    Scaled infeas =        183867.304306
+Iteration: 33544    Scaled infeas =        181981.228389
+Iteration: 33977    Scaled infeas =        181328.142656
+Iteration: 34391    Scaled infeas =        180926.258653
+Iteration: 34796    Scaled infeas =        179475.053571
+Iteration: 35238    Scaled infeas =        178755.992243
+Iteration: 35732    Scaled infeas =        178203.635900
+Iteration: 36228    Scaled infeas =        175865.181035
+Iteration: 36764    Scaled infeas =        174824.240441
+Iteration: 37252    Scaled infeas =        173629.127916
+Markowitz threshold set to 0.1
+Iteration: 37681    Scaled infeas =        172776.119971
+Iteration: 38163    Scaled infeas =        172206.332436
+Iteration: 38673    Scaled infeas =        171739.332192
+Iteration: 39352    Scaled infeas =        170710.391387
+Iteration: 39820    Scaled infeas =        170233.174411
+Iteration: 40346    Scaled infeas =        169719.759759
+Iteration: 40861    Scaled infeas =        169275.417947
+Iteration: 41349    Scaled infeas =        168868.744614
+Elapsed time = 29.45 sec. (20477.86 ticks, 41349 iterations)
+Iteration: 41777    Scaled infeas =        168682.686123
+Iteration: 42201    Scaled infeas =        167893.158679
+Iteration: 42671    Scaled infeas =        167448.936413
+Iteration: 43172    Scaled infeas =        166989.602211
+Iteration: 43622    Scaled infeas =        166235.054705
+Iteration: 44098    Scaled infeas =        163849.569843
+Iteration: 44489    Scaled infeas =        163062.651307
+Iteration: 44938    Scaled infeas =        162761.590463
+Iteration: 45356    Scaled infeas =        162475.889093
+Iteration: 45815    Scaled infeas =        161654.349949
+Iteration: 46196    Scaled infeas =        161199.481496
+Iteration: 46631    Scaled infeas =        160658.617261
+Iteration: 47136    Scaled infeas =        160405.325442
+Iteration: 47534    Scaled infeas =        160185.494077
+Iteration: 47960    Scaled infeas =        160034.846256
+Iteration: 48639    Scaled infeas =        159815.352174
+Iteration: 49199    Scaled infeas =        159523.004723
+Iteration: 49696    Scaled infeas =        159136.641815
+Iteration: 50142    Scaled infeas =        158972.522090
+Iteration: 50597    Scaled infeas =        157921.505851
+Iteration: 51026    Scaled infeas =        157383.578505
+Iteration: 51501    Scaled infeas =        157037.146766
+Elapsed time = 48.17 sec. (30485.75 ticks, 51501 iterations)
+Iteration: 52051    Scaled infeas =        156626.545748
+Iteration: 52525    Scaled infeas =        156220.075263
+Iteration: 52911    Scaled infeas =        156088.046584
+Iteration: 53325    Scaled infeas =        155986.624094
+Iteration: 53735    Scaled infeas =        155860.121460
+Iteration: 54148    Scaled infeas =        155661.293738
+Iteration: 54564    Scaled infeas =        155524.970979
+Iteration: 54922    Scaled infeas =        155399.485610
+Iteration: 55298    Scaled infeas =        155240.796424
+Iteration: 55689    Scaled infeas =        155041.887602
+Iteration: 56140    Scaled infeas =        154655.891508
+Iteration: 56600    Scaled infeas =        154403.906973
+Iteration: 56926    Scaled infeas =        154052.647737
+Iteration: 57340    Scaled infeas =        153663.182627
+Iteration: 57692    Scaled infeas =        153366.315468
+Iteration: 58036    Scaled infeas =        153066.478934
+Elapsed time = 80.17 sec. (41477.05 ticks, 58036 iterations)
+Iteration: 58301    Scaled infeas =        152645.501670
+Iteration: 58554    Scaled infeas =        151685.408677
+Iteration: 58770    Scaled infeas =        150898.387969
+Iteration: 60967    Scaled infeas =        138124.018144
+Iteration: 62940    Scaled infeas =        135869.377432
+Iteration: 65041    Scaled infeas =        135099.619648
+Iteration: 66902    Scaled infeas =        134034.769271
+Iteration: 68836    Scaled infeas =        133034.602985
+Iteration: 70915    Scaled infeas =        132218.999387
+Iteration: 72968    Scaled infeas =        131502.513237
+Iteration: 74616    Scaled infeas =        130531.687254
+Elapsed time = 106.25 sec. (51478.56 ticks, 75568 iterations)
+Iteration: 76133    Scaled infeas =        130031.684237
+Iteration: 77712    Scaled infeas =        129624.376106
+Iteration: 79134    Scaled infeas =        129046.374498
+Iteration: 80492    Scaled infeas =        128346.969422
+Iteration: 82081    Scaled infeas =        127888.335579
+Iteration: 83554    Scaled infeas =        127373.217021
+Elapsed time = 134.88 sec. (61478.83 ticks, 84246 iterations)
+Iteration: 84920    Scaled infeas =        126835.068907
+Iteration: 86388    Scaled infeas =        126341.090644
+Iteration: 87845    Scaled infeas =        125750.891047
+Iteration: 89323    Scaled infeas =        125492.996674
+Iteration: 90764    Scaled infeas =        125087.319263
+Iteration: 92226    Scaled infeas =        124690.658094
+Elapsed time = 164.13 sec. (71479.60 ticks, 92286 iterations)
+Iteration: 93530    Scaled infeas =        124053.664107
+Iteration: 94902    Scaled infeas =        123695.361552
+Iteration: 96434    Scaled infeas =        123457.995201
+Iteration: 97764    Scaled infeas =        122971.543860
+Elapsed time = 193.00 sec. (81482.65 ticks, 98572 iterations)
+Iteration: 99000    Scaled infeas =        122505.557981
+Iteration: 100416    Scaled infeas =        122313.546786
+Iteration: 101699    Scaled infeas =        121946.594847
+Iteration: 103037    Scaled infeas =        121598.080183
+Elapsed time = 222.33 sec. (91671.64 ticks, 104444 iterations)
+Iteration: 104444    Scaled infeas =        121133.185670
+Iteration: 105819    Scaled infeas =        120851.984310
+Iteration: 107304    Scaled infeas =        120598.158560
+Iteration: 108864    Scaled infeas =        120087.271801
+Iteration: 110272    Scaled infeas =        119809.501898
+Iteration: 111641    Scaled infeas =        119452.226980
+Elapsed time = 251.88 sec. (101672.02 ticks, 111748 iterations)
+Iteration: 112975    Scaled infeas =        119110.766087
+Iteration: 114526    Scaled infeas =        118957.836787
+Iteration: 115959    Scaled infeas =        118672.537568
+Iteration: 117266    Scaled infeas =        118240.752280
+Elapsed time = 282.92 sec. (111675.37 ticks, 118539 iterations)
+Iteration: 118630    Scaled infeas =        117966.708652
+Iteration: 120029    Scaled infeas =        117713.002099
+Iteration: 121329    Scaled infeas =        117345.314522
+Iteration: 122714    Scaled infeas =        117039.097492
+Elapsed time = 310.81 sec. (121692.67 ticks, 124163 iterations)
+Iteration: 124163    Scaled infeas =        116828.829271
+Iteration: 125537    Scaled infeas =        116336.559214
+Iteration: 126994    Scaled infeas =        116118.654414
+Iteration: 128491    Scaled infeas =        115696.752050
+Iteration: 129930    Scaled infeas =        115446.816500
+Elapsed time = 341.25 sec. (131695.69 ticks, 130602 iterations)
+Iteration: 131209    Scaled infeas =        114922.396098
+Iteration: 132648    Scaled infeas =        114618.465971
+Iteration: 134022    Scaled infeas =        114321.435995
+Iteration: 135449    Scaled infeas =        113936.282765
+Elapsed time = 371.70 sec. (141697.49 ticks, 136344 iterations)
+Iteration: 136859    Scaled infeas =        113530.175629
+Iteration: 138129    Scaled infeas =        113184.928783
+Iteration: 139424    Scaled infeas =        112802.957809
+Iteration: 140762    Scaled infeas =        112508.325102
+Elapsed time = 402.31 sec. (151699.42 ticks, 142088 iterations)
+Iteration: 142261    Scaled infeas =        112283.528665
+Iteration: 143646    Scaled infeas =        111955.566645
+Iteration: 145048    Scaled infeas =        111650.933660
+Iteration: 146339    Scaled infeas =        111151.412462
+Iteration: 147829    Scaled infeas =        110795.786666
+Elapsed time = 433.67 sec. (161700.71 ticks, 147993 iterations)
+Iteration: 149225    Scaled infeas =        110406.830591
+Iteration: 150703    Scaled infeas =        110253.333357
+Iteration: 152254    Scaled infeas =        110149.524958
+Iteration: 153739    Scaled infeas =        109749.311822
+Elapsed time = 468.56 sec. (171701.45 ticks, 154930 iterations)
+Iteration: 155122    Scaled infeas =        109454.294006
+Iteration: 156553    Scaled infeas =        109232.984768
+Iteration: 157808    Scaled infeas =        108782.414670
+Iteration: 159209    Scaled infeas =        108476.413163
+Elapsed time = 501.30 sec. (181704.36 ticks, 160517 iterations)
+Iteration: 160523    Scaled infeas =        108203.021571
+Iteration: 161871    Scaled infeas =        107934.286937
+Iteration: 163371    Scaled infeas =        107814.091182
+Iteration: 164798    Scaled infeas =        107577.660345
+Iteration: 166219    Scaled infeas =        107377.135578
+Elapsed time = 533.38 sec. (191706.12 ticks, 166754 iterations)
+Iteration: 167642    Scaled infeas =        107153.586805
+Iteration: 169061    Scaled infeas =        106995.442688
+Iteration: 170465    Scaled infeas =        106894.260303
+Iteration: 171817    Scaled infeas =        106675.632152
+Elapsed time = 564.49 sec. (201706.61 ticks, 172143 iterations)
+Iteration: 173194    Scaled infeas =        106474.506799
+Iteration: 174610    Scaled infeas =        106330.094753
+Iteration: 175982    Scaled infeas =        106077.819360
+Elapsed time = 594.81 sec. (211708.10 ticks, 177030 iterations)
+Iteration: 177328    Scaled infeas =        105797.602118
+Iteration: 178522    Scaled infeas =        105634.685546
+Iteration: 180063    Scaled infeas =        105414.036639
+Iteration: 181506    Scaled infeas =        105251.928399
+Elapsed time = 627.14 sec. (221813.14 ticks, 183032 iterations)
+Iteration: 183032    Scaled infeas =        105112.847090
+Iteration: 184533    Scaled infeas =        104888.172017
+Iteration: 186062    Scaled infeas =        104742.435067
+Iteration: 187450    Scaled infeas =        104520.900629
+Iteration: 188997    Scaled infeas =        104422.227326
+Elapsed time = 657.20 sec. (231816.61 ticks, 189530 iterations)
+Iteration: 190391    Scaled infeas =        104148.219127
+Iteration: 191802    Scaled infeas =        104033.755158
+Iteration: 193252    Scaled infeas =        103898.143600
+Iteration: 194656    Scaled infeas =        103467.168485
+Elapsed time = 688.09 sec. (241818.15 ticks, 195004 iterations)
+Iteration: 196096    Scaled infeas =        103284.027138
+Iteration: 197545    Scaled infeas =        103006.922797
+Iteration: 198900    Scaled infeas =        102854.213821
+Iteration: 200364    Scaled infeas =        102739.555688
+Elapsed time = 718.63 sec. (251818.75 ticks, 200399 iterations)
+Iteration: 201882    Scaled infeas =        102575.905072
+Iteration: 203577    Scaled infeas =        102426.283689
+Iteration: 204960    Scaled infeas =        102300.807370
+Iteration: 206402    Scaled infeas =        102222.306420
+Elapsed time = 750.70 sec. (261819.03 ticks, 207679 iterations)
+Iteration: 207962    Scaled infeas =        102079.624862
+Iteration: 209460    Scaled infeas =        101929.865339
+Iteration: 210957    Scaled infeas =        101777.919802
+Iteration: 212402    Scaled infeas =        101547.029764
+Elapsed time = 780.44 sec. (271819.74 ticks, 213621 iterations)
+Iteration: 213831    Scaled infeas =        101282.545588
+Iteration: 215345    Scaled infeas =        101100.454607
+Iteration: 216906    Scaled infeas =        100904.099459
+Iteration: 218415    Scaled infeas =        100726.645659
+Iteration: 219978    Scaled infeas =        100604.200330
+Elapsed time = 810.22 sec. (281820.47 ticks, 220406 iterations)
+Iteration: 221490    Scaled infeas =        100344.688812
+Iteration: 223093    Scaled infeas =        100244.632889
+Iteration: 224639    Scaled infeas =        100137.330428
+Iteration: 226320    Scaled infeas =        100053.674337
+Elapsed time = 840.94 sec. (291822.91 ticks, 227561 iterations)
+Iteration: 228007    Scaled infeas =         99900.235427
+Iteration: 229512    Scaled infeas =         99820.832886
+Iteration: 230987    Scaled infeas =         99596.788676
+Iteration: 232428    Scaled infeas =         99473.621605
+Elapsed time = 871.25 sec. (301825.08 ticks, 233390 iterations)
+Iteration: 233963    Scaled infeas =         99385.636436
+Iteration: 235531    Scaled infeas =         99207.181662
+Iteration: 237072    Scaled infeas =         99098.954921
+Iteration: 238626    Scaled infeas =         99013.203651
+Elapsed time = 902.59 sec. (311937.85 ticks, 240162 iterations)
+Iteration: 240162    Scaled infeas =         98872.853691
+Iteration: 241704    Scaled infeas =         98746.352366
+Iteration: 243196    Scaled infeas =         98669.706593
+Iteration: 244831    Scaled infeas =         98608.329414
+Iteration: 246389    Scaled infeas =         98506.693150
+Elapsed time = 933.67 sec. (321940.21 ticks, 246757 iterations)
+Iteration: 247890    Scaled infeas =         98438.668389
+Iteration: 249291    Scaled infeas =         98359.320887
+Iteration: 250822    Scaled infeas =         98213.190339
+Iteration: 252362    Scaled infeas =         98037.012209
+Elapsed time = 963.84 sec. (331942.06 ticks, 252713 iterations)
+Iteration: 253890    Scaled infeas =         97952.494678
+Iteration: 255407    Scaled infeas =         97878.406454
+Iteration: 257021    Scaled infeas =         97814.639140
+Iteration: 258655    Scaled infeas =         97745.750862
+Elapsed time = 995.05 sec. (341942.71 ticks, 259712 iterations)
+Iteration: 260334    Scaled infeas =         97616.742457
+Iteration: 261895    Scaled infeas =         97552.426661
+Iteration: 263473    Scaled infeas =         97446.256150
+Iteration: 265080    Scaled infeas =         97320.944349
+Elapsed time = 1025.73 sec. (351942.88 ticks, 266154 iterations)
+Iteration: 266722    Scaled infeas =         97275.235339
+Iteration: 268293    Scaled infeas =         97129.501068
+Iteration: 269821    Scaled infeas =         97028.426874
+Iteration: 271400    Scaled infeas =         96919.618996
+Elapsed time = 1056.84 sec. (361944.28 ticks, 272693 iterations)
+Iteration: 272955    Scaled infeas =         96837.006279
+Iteration: 274463    Scaled infeas =         96780.798902
+Iteration: 275962    Scaled infeas =         96692.164428
+Iteration: 277484    Scaled infeas =         96612.046385
+Elapsed time = 1088.66 sec. (371946.33 ticks, 278820 iterations)
+Iteration: 279084    Scaled infeas =         96541.950998
+Iteration: 280673    Scaled infeas =         96505.529355
+Iteration: 282270    Scaled infeas =         96444.814257
+Iteration: 283865    Scaled infeas =         96375.739491
+Iteration: 285575    Scaled infeas =         96288.000155
+Elapsed time = 1121.05 sec. (381947.60 ticks, 286281 iterations)
+Iteration: 287190    Scaled infeas =         96231.157971
+Iteration: 288848    Scaled infeas =         96159.692710
+Iteration: 290440    Scaled infeas =         96121.977420
+Iteration: 292133    Scaled infeas =         96043.489508
+Iteration: 293903    Scaled infeas =         95996.356617
+Elapsed time = 1154.11 sec. (391947.76 ticks, 295150 iterations)
+Iteration: 295552    Scaled infeas =         95914.668107
+Iteration: 297280    Scaled infeas =         95869.292524
+Iteration: 298952    Scaled infeas =         95806.997379
+Iteration: 300680    Scaled infeas =         95732.715856
+Iteration: 302264    Scaled infeas =         95646.693803
+Elapsed time = 1187.08 sec. (401948.05 ticks, 302981 iterations)
+Iteration: 304023    Scaled infeas =         95609.770804
+Iteration: 305816    Scaled infeas =         95395.703847
+Iteration: 307552    Scaled infeas =         95285.102774
+Iteration: 309220    Scaled infeas =         95232.877102
+Iteration: 310965    Scaled infeas =         95195.891375
+Elapsed time = 1220.52 sec. (411948.47 ticks, 312109 iterations)
+Iteration: 312792    Scaled infeas =         95152.880593
+Iteration: 314467    Scaled infeas =         95119.021638
+Iteration: 316147    Scaled infeas =         95085.304654
+Iteration: 317976    Scaled infeas =         95065.052164
+Iteration: 319629    Scaled infeas =         95011.523471
+Elapsed time = 1252.38 sec. (422141.41 ticks, 321279 iterations)
+Iteration: 321279    Scaled infeas =         94911.851482
+Iteration: 322938    Scaled infeas =         94775.402734
+Iteration: 324679    Scaled infeas =         94673.397895
+Iteration: 326314    Scaled infeas =         94583.776083
+Iteration: 328174    Scaled infeas =         94534.056142
+Iteration: 329930    Scaled infeas =         94480.266226
+Elapsed time = 1283.25 sec. (432142.93 ticks, 330521 iterations)
+Iteration: 331723    Scaled infeas =         94369.485976
+Iteration: 333726    Scaled infeas =         94317.128156
+Iteration: 335529    Scaled infeas =         94273.302901
+Iteration: 337356    Scaled infeas =         94236.321833
+Iteration: 339172    Scaled infeas =         94168.798766
+Iteration: 340994    Scaled infeas =         94132.305647
+Elapsed time = 1313.81 sec. (442144.27 ticks, 341314 iterations)
+Iteration: 342689    Scaled infeas =         94045.415538
+Iteration: 344551    Scaled infeas =         94014.533570
+Iteration: 346334    Scaled infeas =         93986.542242
+Iteration: 348099    Scaled infeas =         93925.497527
+Iteration: 350004    Scaled infeas =         93894.511826
+Iteration: 351920    Scaled infeas =         93809.139334
+Elapsed time = 1345.41 sec. (452144.57 ticks, 352649 iterations)
+Sending CtrlBreakp signal
+Exit code = -1073741510
