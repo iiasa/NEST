@@ -36,9 +36,6 @@ cat_year.set = do.call( rbind, lapply( names(years.list), function(tt){ data.fra
 
 ##	time		subannual time periods (seasons - days - hours) 		
 time.set = c( time, 'year' ) # Need to add year to allow for output on annual basis
-
-## map_time
-map_time.set = data.frame(time1 = c( 'year', rep('year', length(time) ), time ), time2 = c('year', time, time), stringsAsFactors = F) 
 							
 ##	lvl_spatial		hierarchical levels of spatial resolution 
 lvl_spatial.set =  c('bcu','national')
@@ -83,8 +80,9 @@ duration_period.par = data.frame(	year = year.set,
 
 ## 	duration_time(time)		duration of one time slice (relative to 1)
 duration_time.par = data.frame(	time = time.set, 
-								value = 1, 
-								stringsAsFactors = F )
+								value = 1/12, 
+								stringsAsFactors = F ) %>% 
+  mutate(value = if_else(time == 'year',1,value) )
 
 ## 	interestrate(year_all)		interest rate (to compute discount factor)
 interestrate.par = data.frame(	year = year.set, 
@@ -152,6 +150,7 @@ peak_load_factor.par = data.frame(node=factor(),commodity=factor(),level=factor(
 rating_bin.par = data.frame(node=factor(),tec=factor(),year_all=factor(),commodity=factor(),level=factor(),time=factor(),rating=factor(),value=numeric()) # maximum share of technology in commodity use per rating
 reliability_factor.par = data.frame(node=factor(),tec=factor(),year_all=factor(),commodity=factor(),level=factor(),time=factor(),rating=factor(),value=numeric()) #		reliability of a technology (per rating)
 share_commodity_lo.par = data.frame(shares=factor(),node_share=factor(),year_all=factor(),time=factor(),value=numeric())
+share_commodity_up.par = data.frame(shares=factor(),node_share=factor(),year_all=factor(),time=factor(),value=numeric())
 
 ##	tec		technologies
 # Create list of technology parameters				
@@ -178,6 +177,14 @@ for( i in seq_along(vars)){
 				
 				df = df[ , c( 'node', 'tec', names(df)[ which( !( names(df) %in% c( 'node', 'tec' ) ) ) ] ) ]
 				
+				df = as.data.frame(as.matrix(df)) 
+				
+				# df[,] <- sapply(df[,,drop=FALSE],as.character) 
+				#  
+				df = df %>% 
+				  mutate_if(sapply(df, is.factor), as.character) %>% 
+				  mutate(value = as.numeric(value)) 
+				
 				} }
 			
 			return( df )	
@@ -186,7 +193,13 @@ for( i in seq_along(vars)){
 		
 		) 
 		
-	}
+}
+
+## map_time
+map_time.set = data.frame(time1 = c( 'year', rep('year', length(time) ), time ), time2 = c('year', time, time), stringsAsFactors = F) 
+map_time.set = map_time.set %>% bind_rows(unique(output.par %>% select(time_out,time)) %>% as.data.frame(row.names = NULL) %>% 
+  filter(time_out != time) %>% filter(time_out != 'year') %>% 
+    rename(time1 = time_out,time2 = time) )
 
 ##	commodity		resources - electricity - water - land availability - etc.
 commodity.set = unique( c( 	input.par$commodity, 
@@ -194,13 +207,18 @@ commodity.set = unique( c( 	input.par$commodity,
 							demand.par$commodity ) )
 
 ## full_balance(commodity)		commodities to include in full commodity balance
-full_balance.set = c('freshwater','wastewater','crop_land',paste0(crop_names,'_land'),paste0(crop_names,'_yield'))
+full_balance = c('freshwater','wastewater','crop_land',paste0(crop_names,'_land'),paste0(crop_names,'_yield'))
 
 ##	level		levels of the reference energy system or supply chain ( primary - secondary - ... - useful )			
 level.set = unique( c( 	input.par$level, 
 						output.par$level,
 						demand.par$level ) )
 			
+balance_equality.set = unique( bind_rows(input.par %>% dplyr::select(commodity,level) %>% distinct(), 
+                                         output.par %>% dplyr::select(commodity,level) %>% distinct() ,
+                                         demand.par %>% dplyr::select(commodity,level) %>% distinct() ) ) %>% 
+  filter(commodity %in% full_balance)
+
 ##	type_tec		types of technologies			
 type_tec.set = unique( unlist( lapply( technology.set, function( iii ){ c( as.character( params.list[[ iii ]]$type ) ) } ) ) )
 	
@@ -273,7 +291,7 @@ bound_storage_up.par = left_join(	dam_storage_capacity.df,
 													level = stock_level ) ) %>%
 										dplyr::select( node, commodity, level, year, time, value )
 
-map_bound_ratio = rule_curves.df %>% select(time,max_min,ratio_avg_max) %>% 
+map_bound_ratio = rule_curves.df %>% dplyr::select(time,max_min,ratio_avg_max) %>% 
   mutate(time = as.factor(time))
 
 ## bound_stock_lo(node,commodity,level,year,time)
@@ -281,23 +299,23 @@ map_bound_ratio = rule_curves.df %>% select(time,max_min,ratio_avg_max) %>%
 bound_storage_lo.par = bound_storage_up.par %>% 
   left_join(map_bound_ratio %>% filter(max_min == 'min')) %>% # take lower rule curve multiplocator
   mutate(value = value * ratio_avg_max) %>% 
-  select(-max_min,-ratio_avg_max) %>% 
+  dplyr::select(-max_min,-ratio_avg_max) %>% 
   mutate(value = if_else( time %in% c(1,12) ,value * 0.8, value *0.8) ) # scale everything down to give some margin
 
 diff_to_smooth2030 = bound_storage_lo.par %>% spread(year,value) %>% 
-  select(node,time,`2020`,`2030`) %>% group_by(node) %>% 
+  dplyr::select(node,time,`2020`,`2030`) %>% group_by(node) %>% 
   mutate(first_diff = (first(`2030`) - first(`2020`)) / 12 , time = as.numeric(time)) %>% 
   filter(first_diff > 0) %>% arrange(node,-time) %>% 
-  mutate(cumsum_diff = cumsum(first_diff)) %>% select(node,time,cumsum_diff)
+  mutate(cumsum_diff = cumsum(first_diff)) %>% dplyr::select(node,time,cumsum_diff)
 
 bound_storage_lo.par = bound_storage_lo.par %>% left_join(diff_to_smooth2030 %>% mutate(time = as.character(time))) %>% 
   mutate(value = if_else(year == 2030 & !is.na(cumsum_diff),value - cumsum_diff,value)) %>% 
-  select(-cumsum_diff)
+  dplyr::select(-cumsum_diff)
 
 bound_storage_up.par = bound_storage_up.par %>% 
   left_join(map_bound_ratio %>% filter(max_min == 'max')) %>% # take upper rule curve multiplicator
   mutate(value = value * ratio_avg_max) %>% 
-  select(-max_min,-ratio_avg_max)
+  dplyr::select(-max_min,-ratio_avg_max)
 
 # bound_storage_up.par = bound_storage_up.par %>% 
 # 	left_join( avg_storage_multiplier ) %>% 
@@ -314,7 +332,7 @@ bound_storage_up.par = bound_storage_up.par %>%
 
 storage_loss.par = evap_losses.df %>% 
   mutate(commodity = 'freshwater',level = 'river_in') %>% 
-  select(node,commodity,level,year,time,value) 
+  dplyr::select(node,commodity,level,year,time,value) 
  
 # Remove large redundant list of data	
 rm( params.list )	
@@ -329,7 +347,9 @@ emission_6.set = c('solar_credit')
 emission_7.set = c('env_flow')
 type_tec_1.set = type_tec_2.set = type_tec_3.set = type_tec_4.set = type_tec_5.set = type_tec_6.set = type_tec_7.set = 'all'
 
+# crop growing time mapping
+crop_growing_time.set = output.par %>% filter(tec %in% c(rainfed_crop_names,irr_tech_names), level == 'area') %>% select(tec,time) %>% distinct()
 
-
-	
-	
+crop_gro_first_time.set = crop_growing_time.set %>% 
+  group_by(tec) %>% 
+  filter(time == first(time)) %>% ungroup()

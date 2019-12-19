@@ -12,7 +12,7 @@ map_rivers_to_pids.df = data.frame( read.csv( 'input/indus_map_rivers_to_pids.cs
 basin.spdf@data = merge( basin.spdf@data, map_rivers_to_pids.df, by = 'PID' )
  
 # Fixed demands in each regions				
-demand_fixed.df = read.csv( "input/indus_demands.csv", stringsAsFactors=FALSE )
+demand_fixed.df = read.csv( "input/indus_demands_new.csv", stringsAsFactors=FALSE )
 
 # Historical capacity of technologies
 hist_new_cap.df = read.csv( "input/historical_new_cap.csv", stringsAsFactors=FALSE ) %>%
@@ -45,7 +45,8 @@ rule_curves.df = read.csv('input/storage/rule_curves_values.csv', stringsAsFacto
 
 # Transmission capacity and routes	
 transmission_routes.df = read.csv("input/basin_transmission/existing_routes.csv", stringsAsFactors=FALSE) %>% 
-							mutate(tec = paste0('trs_',tec))
+							mutate(tec = paste0('trs_',tec)) %>% 
+              dplyr::select( -units )
  
 # Air pollution emision factors from MESSAGE IAM - convert from Mt per GW per year to ton per MW per day
 air_pollution_factors.df = read.csv('input/MESSAGE_SSP2_emission_factor.csv', stringsAsFactors=FALSE) %>%
@@ -67,13 +68,26 @@ gwp.df = data.frame( emission = names( gwp.df ), gwp = unlist( gwp.df )  )
 # Distance between nodes 
 distance.df = read.csv('input/PID_distances_km.csv', stringsAsFactors=FALSE)
 
+
 # Water resource data 
 water_resources.df = read.csv( paste0( 'input/basin_water_resources/basin_water_resources_',climate_model,'_',climate_scenario,'.csv' ), stringsAsFactors=FALSE ) %>%
 	dplyr::rename( node = PID )
+if (grepl('extreme',sc)){
+  water_resources.df1 = water_resources.df %>% select(node,contains('2015'),contains('2020'))
+  # Water resource data
+  water_resources.df2 = read.csv( paste0( 'input/basin_water_resources/basin_water_resources_',climate_model,'_',climate_scenario,'_extreme.csv' ), stringsAsFactors=FALSE ) %>%
+    dplyr::rename( node = PID ) %>% select(-node,-contains('2015'),-contains('2020'))
+  water_resources.df = water_resources.df1 %>% bind_cols(water_resources.df2)
+}
  
 environmental_flow.df = read.csv( paste0('input/basin_water_resources/basin_environmental_flow_',climate_model,'_',climate_scenario,'.csv'), stringsAsFactors=FALSE ) %>%
-	dplyr::rename( node = PID )
- 
+	dplyr::rename( node = PID ) %>% 
+  gather('key','value',2:73) %>% 
+  mutate(time = as.numeric(gsub('.*\\.','',key))) %>% 
+  mutate(year_all = as.numeric(gsub('.*\\_','',gsub('\\..*$','',key)) )) %>% 
+  mutate(value = 1e3 * value, units = 'mcm_per_day') %>% 
+  dplyr::select(node,year_all,time,value,units)
+  
 # Water canal linkages 
 canals.df = read.csv( 'input/indus_bcu_canals.csv', stringsAsFactors=FALSE )
   
@@ -92,17 +106,22 @@ electric_share_of_irrigation.df = read.csv( 'input/irrigation_electricity_fracti
 									rename( node = PID )
 
 # land availability [km2] source GAEZ to be multiplyby 100 if we want hectare
-land_availability.df = read.csv( 'input/land_availability_map.csv', stringsAsFactors=FALSE )
+land_availability.df = read.csv( 'input/land_availability_map.csv', stringsAsFactors=FALSE ) %>% 
+  mutate(value = value * 1.2 )
 
 # crop related data: costs, yields, initial capacity source GAEZ, some is in Mha
 crop_input_data.df = read.csv( 'input/crop_input_data.csv', stringsAsFactors=FALSE ) 
-crop_names = unique(crop_input_data.df$crop) 
+crop_names = unique(crop_input_data.df$crop)
 
 # crop related data:  costs, CF, lifetime. Sources: Ansir
 crop_tech_data.df = read.csv( 'input/crop_tech_data.csv', stringsAsFactors=FALSE ) 
 
 # irrigation technologies related data: costs, CF, lifetime. Sources: Ansir
 irr_tech_data.df = read.csv( 'input/irr_tech_data.csv', stringsAsFactors=FALSE ) 
+
+# historical irrigation water withdrawals activities
+hist_irr_water_act = read.csv( "input/historical_irrigation_withdrawals_act.csv", stringsAsFactors=FALSE ) %>% 
+  filter(scenario == climate_scenario, model == climate_model) %>% dplyr::select(node, tec, time, value)
 
 # crop water requirements: Source iteraction with CWATM: historical, rcp2.6 and rcp6.0 scenarios - in MCM_per_day_per_Mha
 crop_water.df = read.csv('input/crop_irrigation_water_calibrated.csv', stringsAsFactors=FALSE) %>% 
@@ -124,14 +143,14 @@ mapr = raster::extract(prov.raster,as(basin.spdf,'SpatialPolygons'),byid=TRUE)
 mapr = bind_rows( lapply( 1:length(mapr), function(iii){ data.frame( PID = basin.spdf@data$PID[iii], region = names(prov.sp)[as.numeric(names(which.max(table(unlist( mapr[[iii]] )))))] ) } ) )
 mapr$region[ which( grepl( 'IND', mapr$PID ) ) ] = 'IND'
 mapr$region[ which( grepl( 'CHN|AFG|Northern_Areas', mapr$region ) ) ] = 'PAK|NWFP'
-fertilizer_by_crop.df = left_join( mapr, fertilizer_by_crop.df ) %>% select( crop, irrigation, PID, fertilizer, unit, value, min, max )
+fertilizer_by_crop.df = left_join( mapr, fertilizer_by_crop.df ) %>% dplyr::select( crop, irrigation, PID, fertilizer, unit, value, min, max )
 	
 # import fertlizer emissions data and merge with crop data 
 fertilizer_emissions.df = left_join( fertilizer_by_crop.df, 
-	read.csv('input/fertilizer_emissions.csv', stringsAsFactors=FALSE) %>% select( fertilizer, out, value, unit ) %>%
+	read.csv('input/fertilizer_emissions.csv', stringsAsFactors=FALSE) %>% dplyr::select( fertilizer, out, value, unit ) %>%
 		rename( value2 = value, unit2 = unit ) ) %>% 
 		mutate( value3 = round( value * value2, digits = 5 ), unit3 = 'kg/ha', emission = out ) %>%
-		select( PID, crop, fertilizer, irrigation, emission, value3, unit3 ) %>% rename( value = value3, unit = unit3 ) 
+		dplyr::select( PID, crop, fertilizer, irrigation, emission, value3, unit3 ) %>% rename( value = value3, unit = unit3 ) 
   
 # Get adjacent and downstream bcus
 gt = gTouches( basin.spdf, byid=TRUE )
@@ -150,7 +169,7 @@ adjacent_routes = adj1[ -1 * inds ]
 coast = crop( spTransform( readShapeLines('input/ne_10m_coastline.shp', proj4string = crs(basin.spdf)), crs(basin.spdf) ), extent( buffer( basin.spdf, 0.1 ) ) ) 
 cdist = gDistance(coast, basin.spdf, byid = TRUE)
 coast_pid = unlist( lapply( 1:nrow(cdist), function(b){ if( length( which( cdist[b,] < 1.5 ) ) > 0 ){ return( as.character( basin.spdf@data$PID[b] ) ) }else{ return( NULL ) } } ) )
-
+coast_pid = c(coast_pid, 'AFG_2','IND_4','IND_2','CHN_1')
 # Electricity trade routes for regions outside the basin were identified from basin map 
 # electricity_export_routes = c( 	"PAK_2|PAK",
 #                                 "PAK_4|PAK",
@@ -177,6 +196,12 @@ electricity_export_routes = gsub('.*trs_','', (transmission_routes.df %>%
 all_elec_routes = c(adjacent_routes,electricity_export_routes)
 
 electricity_import_routes = electricity_export_routes
+
+# Interbasin transfersto India potentially missed in irrigation implementation
+# Identified manually as 1) node that transfers water out to India via Indira Ghandhi canal etc.; and 
+# 2) node the contains Keenjhar Lake and 583 MGD link to Karachi for potable water supply
+interbasin_transfer.df = data.frame( 	node = c('IND_4','PAK_4'),
+										min_flow = c( 1e-6, 2.2) )	# for IND4 the irrigation representation includes diversions outisde of the basin; PAK4 is tranfers for Karachi of 583 MGD; AFG_2 set arbitrarily
 	
 # Commodity types for demand 
 type_commodity = data.frame( 	withdrawal = 'freshwater',
@@ -202,7 +227,7 @@ demand.df = demand_fixed.df %>%
 				dplyr::select( node, level, commodity, year_all, time, value )
 				
 # Convert water demand units from m3 per day to million m3 per day (mcm_per_day)
-demand.df$value[ which( demand.df$commodity == 'freshwater' ) ] = demand.df$value[ which( demand.df$commodity == 'freshwater' ) ] / 1e6
+demand.df$value[ which( demand.df$commodity == 'freshwater' ) ] = demand.df$value[ which( demand.df$commodity == 'freshwater' ) ] 
 
 # Convert return flows to negative to represent inflow into the system
 demand.df$value[ which( grepl( 'waste', demand.df$level ) ) ] = -1 * demand.df$value[ which( grepl( 'waste', demand.df$level ) ) ]
@@ -219,7 +244,7 @@ demand.df$value = round( demand.df$value, digits = 2 )
 nms = names( water_resources.df )[ grepl( 'runoff_km3_per_day', names( water_resources.df ) ) ]
 inflow.df = do.call( rbind, lapply( 1:nrow(water_resources.df), function( iii ){
 	data.frame( node = as.character( water_resources.df$node[ iii ] ),
-				level = 'river_in',
+				level = 'inflow',
 				commodity = 'freshwater',
 				year_all = as.numeric( unlist( strsplit( unlist( strsplit( nms, '[.]' ) )[ seq(1,2*length(nms),by=2) ], '_' ) )[ seq( 5, 5*length( nms ),by=5) ] ),
 				time = as.numeric( unlist( strsplit( nms, '[.]' ) )[ seq(2,2*length(nms),by=2) ] ),
@@ -228,6 +253,49 @@ inflow.df = do.call( rbind, lapply( 1:nrow(water_resources.df), function( iii ){
 row.names( inflow.df ) = 1:nrow(inflow.df)	
 inflow.df = inflow.df %>% dplyr::select( node, commodity, level, year_all, time, value ,units)
 demand.df = rbind( demand.df, inflow.df )
+
+# Add recharge into PIDs as an additional demand (inflow) into pids
+nms = names( water_resources.df )[ grepl( 'recharge_km3_per_day', names( water_resources.df ) ) ]
+recharge.df = do.call( rbind, lapply( 1:nrow(water_resources.df), function( iii ){
+	data.frame( node = as.character( water_resources.df$node[ iii ] ),
+				level = 'aquifer',
+				commodity = 'renewable_gw',
+				year_all = as.numeric( unlist( strsplit( unlist( strsplit( nms, '[.]' ) )[ seq(1,2*length(nms),by=2) ], '_' ) )[ seq( 5, 5*length( nms ),by=5) ] ),
+				time = as.numeric( unlist( strsplit( nms, '[.]' ) )[ seq(2,2*length(nms),by=2) ] ),
+				value = -1*round( 1e3 * unlist( water_resources.df[ iii, nms ] ) , digits = 2 ),
+				units = 'mcm_per_day')	} ) )
+row.names( recharge.df ) = 1:nrow(recharge.df)	
+recharge.df = recharge.df %>% dplyr::select( node, commodity, level, year_all, time, value ,units)
+demand.df = rbind( demand.df, recharge.df )
+
+# check total inflow
+# From Laghari et al 2012:
+# Basin long term average surface water availability
+# is in the order 239 km3 (Hoekstra and Mekonnen, 2011) to
+# 258 km3 (Gupta and Deshpande, 2004; Kreutzmann, 2011; Sharma et al., 2008). In India, surface water availability is
+# 73 km3 (Gupta and Deshpande, 2004; Sharma et al., 2008) and the Pakistani part accounts for 175 km3
+# (Briscoe and Qamar, 2007) or 185 km3 (Kreutzmann, 2011). This includes 165 km3
+# from the 3 western rivers (Indus, Chenab, and Jehlum) and 10 km3
+# from the eastern rivers (Ravi, Beas, and Sutlej). Afghani surface water availability is 25 km3
+# (Qureshi, 2011) and is included in the latter Pakistani volumes. Replenishable groundwater resources in India are
+# 27 km3 (Sharma et al., 2008) and in Pakistan 63 km3
+# (Briscoe and Qamar, 2007; Qureshi, 2011). 
+infl = c( demand.df %>% 
+	filter( level == 'inflow' ) %>% 
+	left_join( ., data.frame( time = 1:12, days = c(31,28.25,31,30,31,30,31,31,30,31,30,31) ) ) %>% 
+	group_by( year_all ) %>% 
+	summarise( value_km3 = round( sum( value * days )*-1/1e3 ) ) %>% 
+	as.data.frame() )
+print( 'runoff' )
+print(infl)	# about 240 km3 per year - looks good with the numbers stated above
+rech = c( demand.df %>% 
+	filter( level == 'aquifer' ) %>% 
+	left_join( ., data.frame( time =1:12, days = c(31,28.25,31,30,31,30,31,31,30,31,30,31) ) ) %>% 
+	group_by( year_all ) %>% 
+	summarise( value_km3 = round( sum( value * days )*-1/1e3 ) ) %>% 
+	as.data.frame() )
+print( 'recharge' )
+print( rech )	# seems low ( 8km3 per year ) but I gues is not really including the recharge from irrigation.
 
 
 # Add inter-basin irrigation transfers as demand taken straight from the river
@@ -260,27 +328,32 @@ demand.df = demand.df %>%
 	summarise( value = round( sum( value ), digits = 2 ) ) %>% 
 	ungroup( ) %>% data.frame( ) 
 
+# scale manufacturing sector water demands in India for now
+demand.df = demand.df %>% 
+  mutate(value = if_else(level == 'industry_final' & units == 'mcm_per_day' & grepl( 'IND', node ), 0.1 * value , value) )
+
 # Land demand
 land_demand.df = land_availability.df %>% 
   expand(land_availability.df,year_all) %>% 
   mutate(level = 'area') %>% 
-  mutate(time = 'year') %>%
   mutate(commodity = 'crop_land') %>% 
   mutate(value = value) %>% #in Mha
+  crossing(time = time ) %>% 
   dplyr::select(node,level,commodity,year_all,time,units,value)
   
 # add land availability
 demand.df = bind_rows(demand.df %>% mutate( time = as.character( time ) ), land_demand.df)
 
 # yield demand, assumption as multiple of historical yield
-# for now we set the demand to be equal to the production in 2000, must check if it is feasible with our data
-yield_demand.df = demand_fixed.df %>% filter(sector == 'crop') %>% 
+# we have historical demand of 2000 (GAEZ) projected with FAO national production levels and SSP population growth
+yield_demand.df = demand_fixed.df %>% 
+  filter( scenario == SSP , sector == 'crop') %>%
   mutate( level = 'raw' ,year_all = as.numeric(year), time = 'year') %>% 
   mutate( commodity = paste0( type, '_yield' ) ) %>% 
   mutate( value = value ) %>%       # ktons
   rename(node = pid) %>% 
-  select( node,level,commodity,year_all,time,units,value ) %>%
-  mutate( node = unlist( strsplit( as.character( node ), '_' ) )[seq(1,2*length(node),by=2)] ) %>%
+  dplyr::select( node,level,commodity,year_all,time,units,value ) %>%
+  # mutate( node = unlist( strsplit( as.character( node ), '_' ) )[seq(1,2*length(node),by=2)] ) %>%
   group_by(node,level,commodity,year_all,time,units) %>% 
   summarise(value = sum(value)) %>% ungroup() %>% data.frame()
   
@@ -305,7 +378,7 @@ mean_dist_to_border = mean(distance.df$dist)/2
 trs_inv_cost.df = distance.df %>% mutate( value = round( 1e-3 * dist*1.31, digits = 3 ) ) %>% dplyr::select(-dist) %>%
 	bind_rows( data.frame( tec = electricity_export_routes, value = round( 1e-3 * mean_dist_to_border*1.31, digits = 3 ) ) )
 
-# transmission efficiency assuming losses of 0.006% per km (aligned with Parkinson et al.)	
+# transmission efficiency assuming losses of 0.006% per km (aligned with Parkinson et al. 2016 EST)	
 trs_eff.df = distance.df %>% mutate( value = round( 0.01 * dist*0.006, digits = 3 ) ) %>% dplyr::select(-dist) %>%
 	bind_rows( data.frame( tec = electricity_export_routes, value = round( 0.01 * 2 * mean_dist_to_border*0.006, digits = 3 ) ) )
 
@@ -337,7 +410,8 @@ yield_dem_comb = unique(yield_demand.df %>% dplyr::select(commodity,node)) %>%
 
 irr_yield_comb = crop_input_data.df %>% filter( par == 'irrigation_yield') %>% rename(tec = crop) %>% 
   dplyr::select(tec,node) %>% unique() %>% arrange(tec) %>% 
-  mutate(node = gsub('_.*','',node)) %>% unique()
+  # mutate(node = gsub('_.*','',node)) %>% 
+  unique()
 
 diff_y_demand = dplyr::setdiff(yield_dem_comb,irr_yield_comb) %>% # they have the same combinations
   mutate(commodity = paste0(tec,'_yield')) %>% dplyr::select(-tec)
@@ -350,12 +424,12 @@ demand.df <- demand.df %>% filter(year_all <= lastyear)
 
 ## data for biomass 
 # kton residues per hectare Lal 2004
-residue_data = data.frame(crop = c('cotton','fodder','pulses','rice','sugarcane','wheat'),
-                          res_yield = c(6.7e3 , 8.4e3 , 6.48e3 , 6.7e3 , 5.6e3 , 5e3), #kt/Mha
-                          mode = c(1:6),
-                          liquid = c(0 ,1 , 0, 1, 1, 1),
-                          ethanol_ratio = c(NA, 0.67, NA, 0.7, 0.153, 0.67),    # kt ethanol/ kt biomass
-                          var_eth_cost = c(NA, 0.316, NA, 0.410, 0.291, 0.621)) #2010 M$/kt straw biomass
+residue_data = data.frame(crop = c('cotton','fodder','pulses','rice','sugarcane','wheat','maize'),
+                          res_yield = c(6.7e3 , 8.4e3 , 6.48e3 , 6.7e3 , 5.6e3 , 5e3, 10.1e3), #kt/Mha
+                          mode = c(1:7),
+                          liquid = c(0 ,1 , 0, 1, 1, 1, 1),
+                          ethanol_ratio = c(NA, 0.67, NA, 0.7, 0.153, 0.67, 0.67),    # kt ethanol/ kt biomass
+                          var_eth_cost = c(NA, 0.316, NA, 0.410, 0.291, 0.621, 0.43)) #2010 M$/kt straw biomass
 
 							  
 						  

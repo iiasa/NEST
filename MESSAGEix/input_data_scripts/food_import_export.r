@@ -41,7 +41,7 @@ map_country = data.frame(country = unique(imp_exp.df$country),
                          node = c('AFG','IND','PAK') )
   
 map_crop = data.frame(item = unique(imp_exp.df$item),
-                         crop = c('cotton','pulses','rice','wheat','fodder','sugarcane') )
+                         crop = c('cotton',"Maize and products",'pulses','rice','wheat','fodder','sugarcane') )
 
 # scale with population
 pop_ratio = pid_pop_gdp %>% mutate(node = gsub('_.*','',PID)) %>% 

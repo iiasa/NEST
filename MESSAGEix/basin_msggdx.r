@@ -17,6 +17,7 @@ require( rgdal )
 require( tictoc )
 require( maptools )
 require( rgeos )
+require( gdxrrw )
 
 
 #### Initialization / Model setup #####
@@ -111,6 +112,7 @@ technology.set = c( 'gas_cc_ot',
 					'electricity_short_strg', 
 					routes_names,
 					exp_routes_names,
+					'sw_extract',
 					'gw_extract',
 					'renew_gw_extract',
 					'urban_sw_diversion',
@@ -142,18 +144,20 @@ technology.set = c( 'gas_cc_ot',
 					'irrigation_sw_diversion',
 					'irrigation_gw_diversion',
 					'smart_irrigation_sw_diversion',
-					'smart_irrigation_gw_diversion',
+					# 'smart_irrigation_gw_diversion',
 					'irrigation_desal_seawater',
 					'energy_sw_diversion',
 					'energy_gw_diversion',
 					'environmental_flow',
-					'surface2ground',
-					'ground2surface',
+					'internal_runoff',
+					# 'surface2ground',
+					# 'ground2surface',
+					'interbasin_canal',
 					river_names,
 					canal_names,
 					crop_tech_names,
 					rainfed_crop_names,
-					irr_tech_names,
+					irr_tech_names[!grepl('flood_fruit',irr_tech_names)],
 					'fallow_crop',
 					'solid_biom',
 					'ethanol_prod',

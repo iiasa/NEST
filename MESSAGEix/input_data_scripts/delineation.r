@@ -289,6 +289,9 @@ writeOGR(
 # Test plots
 ################
 
+bcus.spdf = readOGR( 'input', paste( basin, 'bcu', sep = '_' ) )
+bcus.sp = as( bcus.spdf, 'SpatialPolygons')
+
 ## Plot 1 - Map of indus region with river, elevation and key cities
 
 # Get river network
@@ -386,6 +389,9 @@ coordinates( cities_lab.spdf ) = ~lon+lat
 proj4string(cities_lab.spdf) = proj4string(basin_red.sp)
 cities_lab.spdf = spTransform( cities_lab.spdf, crs(basin_red.sp) )		
 			
+
+islamabad = data.frame(x=73.0479,y=33.6844)
+coordinates( islamabad ) = ~x+y
 			
 ## Plot
 colbreaks = c(0,200,500,1000,2000,4000,max(elevation.raster[],na.rm=TRUE))
@@ -422,7 +428,7 @@ ind_gan.sl = spTransform( ind_gan.sl, crs(basin.sp))
 rivers = c('Indus', 'Chenab', 'Jhelum', 'Ravi', 'Beas', 'Sutlej','Kabul','Gomal')
 
 #colregions = alpha( colorRampPalette( c('darkolivegreen3', 'tan1') )(length(colbreaks)), alpha = 1 )
-pdf( 'input/indus_map_base.pdf', width=6, height=6 )
+pdf( 'input/indus_map_base_2.pdf', width=6, height=6 )
 plot( 	buff.sp, 
 		border = NA, 
 		col = NA, 
@@ -430,8 +436,8 @@ plot( 	buff.sp,
 		cex.main = 0.8,
 		cex.lab = 0.8,
 		bg = "#A6CAE0", 
-		#xlab = expression("Longitude ["~degrees~"East ]"), 
-		#ylab = expression("Latitude ["~degrees~"North ]"), 
+		xlab = expression("Longitude ["~degree~"East ]"), 
+		ylab = expression("Latitude ["~degree~"North ]"), 
 		mgp = c(2.5,0.5,0)
 		)
 plot(cnt2.sp, border  = "navy", col="gray96", add=TRUE)	
@@ -440,17 +446,26 @@ plot(	elevation.raster,
 		breaks=colbreaks,
 		col=colregions,
 		add=TRUE, legend = FALSE )
-plot(basin_red.sp,add=TRUE, col = NA, border = 'purple', lwd=1.5)	
+plot(basin_red.sp,add=TRUE, col = NA, border = 'red', lwd=2)	
+plot( 	do.call( rbind, lapply( c('IND','PAK','AFG','CHN','NPL','TJK','UZB','TKM','IRN'), function(cnt){ getData( 'GADM', country = cnt, level = 0 ) } ) ), 
+		col = alpha( c('khaki','lightgreen','lightblue','lightcoral','grey75','grey75','grey75','grey75','grey75'), alpha = 0.2 ),
+		border = 'gray25', add = TRUE )	
 plot(as_riv_15s_red.spdf, add=TRUE, col = 'deepskyblue', lwd=as_riv_15s_red.spdf@data$lwd)	
-plot(canal.spdf,add=TRUE,col=alpha('red',alpha=0.8),lwd=0.5)
-plot(ind_gan.sl,add=TRUE,col=alpha('red',alpha=0.8),lwd=0.5)
+text( 65.75, 26.5, 'PAK', col = 'forestgreen',cex=1.5)
+text( 76, 29, 'IND', col = 'brown',cex=1.5)
+text( 82.5, 34, 'CHN', col = 'darkred',cex=1.5)
+text( 67, 36, 'AFG', col = 'navy',cex=1.5)
+#plot(canal.spdf,add=TRUE,col=alpha('red',alpha=0.8),lwd=0.5)
+#plot(ind_gan.sl,add=TRUE,col=alpha('red',alpha=0.8),lwd=0.5)
 text( sea_label.spdf, label = sea_label.spdf@data$sea, col = 'navy', cex = 0.65, font = 3 )
 #text( admin_lab.sp, label = row.names(admin_lab.sp), col = alpha('gray25',alpha=0.7), cex = 0.7, font = 2 )
-points( cities.spdf, pch = 21, bg = 'white', col = 'black' )
-text( cities_lab.spdf, label = cities_lab.spdf@data$city, col = 'black', cex = 0.6, font = 2 )
+points( islamabad, pch = 21, bg = 'white', col = 'black', cex=1.2 )
+text( data.frame(islamabad) %>% mutate( x = x-0.75, y = y-0.4 ) %>% 'coordinates<-'(~x+y), label = 'Islamabad', col = 'black', cex = 0.8, font = 2 )
+#points( cities.spdf, pch = 21, bg = 'white', col = 'black' )
+#text( cities_lab.spdf, label = cities_lab.spdf@data$city, col = 'black', cex = 0.6, font = 2 )
 box()		 
-#axis(side=1, cex.axis = 0.8)
-#axis(side=2, cex.axis = 0.8)
+axis(side=1, cex.axis = 0.8)
+axis(side=2, cex.axis = 0.8)
 legend( 'bottomright', 
 		legend = c('0-200','200-500','500-1000','1000-2000','2000-4000', '> 4000'), 
 		fill = colregions, 
@@ -459,21 +474,104 @@ legend( 'bottomright',
 		bty = 'n',
 		cex = 0.75 )
 legend( 'topright', 
-		legend = c('Basin boundary', 'Main river', 'Main canal'),
+		legend = c('Basin boundary', 'River channel', 'Country border'),
 		lty = 1,
-		lwd = c(1.5,1.5,1),		
-		col = c('purple','deepskyblue',alpha('red',alpha=0.8)), 
+		lwd = c(2,3,1.5),		
+		col = c('red','deepskyblue','gray25'), 
 		seg.len = 3,
 		ncol = 1,  
 		bty = 'n',
-		cex = 0.75 )		
-scalebar(500, type = 'bar', xy = c(71, 24), divs = 5, cex = 0.75, lonlat = TRUE )
-text( 73.75, 23.65, label = 'Distance [ km ]', cex = 0.75 ) 
-arrows( 65 , 35, 67, 35, length = 0.1, angle = 30 )
-text( 67.35, 35, label = 'E', cex = 0.7, font = 1 ) 
-arrows( 65 , 35, 65, 37, length = 0.1, angle = 30 )  
-text( 65, 37.35, label = 'N', cex = 0.7, font = 1 ) 
+		cex = 0.8 )		
+scalebar(500, type = 'bar', xy = c(72, 24), divs = 5, cex = 0.75, lonlat = TRUE )
+text( 74.75, 23.65, label = 'Distance [ km ]', cex = 0.75 ) 
+# text( 73.75, 23.65, label = 'Distance [ km ]', cex = 0.75 ) 
+# arrows( 65 , 35, 67, 35, length = 0.1, angle = 30 )
+# text( 67.35, 35, label = 'E', cex = 0.7, font = 1 ) 
+# arrows( 65 , 35, 65, 37, length = 0.1, angle = 30 )  
+# text( 65, 37.35, label = 'N', cex = 0.7, font = 1 ) 
 dev.off()
+
+# Irrigation command areas are identified from the gridded irrigation withdrawals harmonized  in Cheema et al. 2014
+IRR_cw.raster = raster( 'input/IRR_cw.img' )
+IRR_cw.raster = projectRaster( setValues(raster(IRR_cw.raster),IRR_cw.raster[]), crs = crs( basin.spdf ) )
+IRR_cw.raster[ ! IRR_cw.raster[] > 0 ] = NA
+IRR_gw.raster = raster( 'input/IRR_gw.img' )
+IRR_gw.raster = projectRaster( setValues(raster(IRR_gw.raster),IRR_gw.raster[]), crs = crs( basin.spdf ) )
+IRR_gw.raster[ ! IRR_gw.raster[] > 0 ] = NA
+IRR_gw.raster = resample( IRR_gw.raster, IRR_cw.raster, method = 'bilinear' )
+	
+## Plot
+colbreaks = c(0,100,200,400,600,800,1000,max(IRR_cw.raster[],na.rm=TRUE))
+colregions = c( 'navy','cyan','chartreuse','yellow','orange','red','brown')
+
+pdf( 'input/indus_irrig_base_2.pdf', width=6, height=6 )	
+plot( 	IRR_cw.raster, 
+		border = NA, 
+		col = NA, 
+		cex.axis = 0.8,
+		cex.main = 1,
+		cex.lab = 0.8,
+		bg = "#A6CAE0", 
+		legend = FALSE,
+		main = 'Total Irrigation Withdrawal',
+		xlab = expression("Longitude ["~degree~"East ]"), 
+		ylab = expression("Latitude ["~degree~"North ]"), 
+		mgp = c(2.5,0.5,0)
+		)	
+plot(cnt2.sp, border  = "navy", col="gray96", add=TRUE)			
+plot(	IRR_cw.raster,
+		breaks=colbreaks,
+		col=colregions,
+		add=TRUE, legend = FALSE )
+plot( 	do.call( rbind, lapply( c('IND','PAK','AFG'), function(cnt){ crop( getData( 'GADM', country = cnt, level = 0 ), extent(par('usr')) ) } ) ), 
+		col = alpha( c('khaki','lightgreen','lightblue'), alpha = 0.1 ),
+		border = 'gray25', add = TRUE )	
+plot(crop(as_riv_15s_red.spdf,extent(par('usr'))), add=TRUE, col = 'deepskyblue', lwd=as_riv_15s_red.spdf@data$lwd)			
+plot(crop(basin_red.sp,extent(par('usr'))),add=TRUE, col = NA, border = 'red', lwd=2)			
+legend( 'bottomright', 
+		legend = c('0-100','100-200','200-400','400-600','600-800','800-1000', '> 1000'), 
+		fill = colregions, 
+		ncol = 1,  
+		title = expression( '[ ' ~ m^3 ~ ' ] ' ), 
+		bty = 'n',
+		cex = 0.75 )
+abline(v=c(par('usr')[1:2],lwd=2))
+abline(h=c(par('usr')[3:4],lwd=2))		
+dev.off()			
+pdf( 'input/indus_irrig_base_3.pdf', width=6, height=6 )	
+plot( 	IRR_gw.raster, 
+		border = NA, 
+		col = NA, 
+		cex.axis = 0.8,
+		cex.main = 1,
+		cex.lab = 0.8,
+		bg = "#A6CAE0", 
+		legend = FALSE,
+		main = 'Groundwater Irrigation Withdrawal',
+		xlab = expression("Longitude ["~degree~"East ]"), 
+		ylab = expression("Latitude ["~degree~"North ]"), 
+		mgp = c(2.5,0.5,0)
+		)	
+plot(cnt2.sp, border  = "navy", col="gray96", add=TRUE)	
+plot(	IRR_gw.raster,
+		breaks=colbreaks,
+		col=colregions,
+		add=TRUE, legend = FALSE )
+plot( 	do.call( rbind, lapply( c('IND','PAK','AFG'), function(cnt){ crop( getData( 'GADM', country = cnt, level = 0 ), extent(par('usr')) ) } ) ), 
+		col = alpha( c('khaki','lightgreen','lightblue'), alpha = 0.1 ),
+		border = 'gray25', add = TRUE )	
+plot(crop(as_riv_15s_red.spdf,extent(par('usr'))), add=TRUE, col = 'deepskyblue', lwd=as_riv_15s_red.spdf@data$lwd)			
+plot(crop(basin_red.sp,extent(par('usr'))),add=TRUE, col = NA, border = 'red', lwd=2)			
+legend( 'bottomright', 
+		legend = c('0-100','100-200','200-400','400-600','600-800','800-1000', '> 1000'), 
+		fill = colregions, 
+		ncol = 1,  
+		title = expression( '[ ' ~ m^3 ~ ' ] ' ), 
+		bty = 'n',
+		cex = 0.75 )
+abline(v=c(par('usr')[1:2],lwd=2))
+abline(h=c(par('usr')[3:4],lwd=2))		
+dev.off()		
 
 
 

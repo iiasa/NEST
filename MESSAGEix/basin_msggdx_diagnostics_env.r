@@ -8,15 +8,14 @@ library(broom)
 require( rgdal )
 library(rgeos)
 
-# Location of input data
-setwd( 'P:/is-wel/indus/message_indus' )
-gams_path = 'C:/GAMS/win64/24.9'
+# Location of input data 
+setwd( 'P:/is-wel/indus/message_indus' ) 
+
 # Local location of indus ix model - MAKE SURE TO ADD TO SYSTEM ENVIRONMENT VARIABLES
 indus_ix_path = Sys.getenv("INDUS_IX_PATH")
 setwd(indus_ix_path)
-# Basin analyzed
-basin = 'Indus'
 basin.spdf = readOGR( paste( "P:/is-wel/indus/message_indus", 'input', sep = '/' ), paste( basin, 'bcu', sep = '_' ), verbose = FALSE )
+
 
 if (!exists('shiny_mode')) shiny_mode = F
 
@@ -31,13 +30,12 @@ if (shiny_mode){} else {
 basin = 'Indus'
 
 # Get the relevant data from the gdx output files
-scname = c(baseline,sc)
+scname = c('baseline',sc)
 scen_chk = sapply( scname, function( sss ){ paste( 	'MSGoutput_', sss, '.gdx', sep = '' ) } )
 					
 upath = paste( indus_ix_path, '/model/output/', sep='')
 
 # Import results from gdx
-gams_path = 'C:/GAMS/win64/24.9'
 igdx( gams_path )
 res.list = lapply( scen_chk, function(fpath){ # 65.97 sec elapsed
 	vars = c( 'demand_fixed','CAP_NEW', 'CAP','historical_new_capacity', 'ACT', 'input', 'output', 'inv_cost', 'fix_cost', 'var_cost','EMISS',
@@ -162,8 +160,7 @@ cost_by_technology.df = cost_by_technology.df %>% left_join(tech_type.df) %>%
   mutate(country = if_else(node != 'Indus', gsub('_.*','',node), node))
 
 cost_by_technology.shiny = cost_by_technology.df %>% select(node,year_all,scenario,type,value) %>% 
-  group_by(node,year_all,scenario,type) %>% summarise(value = sum(value)*1e-3) %>% ungroup() %>% 
-  mutate(unit = 'Billion USD')
+  group_by(node,year_all,scenario,type) %>% summarise(value = sum(value)) %>% ungroup()
 type.shiny = as.character(unique(cost_by_technology.shiny$type))
 
 if (shiny_mode){} else {
@@ -184,26 +181,24 @@ if (shiny_mode){} else {
     geom_bar( stat = "identity", position = "stack", color = 'grey40',size = 0.1) +
     facet_wrap(country~cost)+ylab('Billion USD per year')+
     scale_fill_manual(values = cost_col)+
-    theme_bw()+ theme(axis.title.x = element_blank(),
-                      axis.text.x = element_text(angle = 45))
+    theme_bw()+ theme(axis.title.x = element_blank())
   plot(v1)	
   
   v2 = ggplot(df_cost %>% filter(country %in% c('Indus') ),aes(x = scenario,y = value,fill = type))+
     geom_bar( stat = "identity", position = "stack", color = 'grey40',size = 0.1) +
     facet_wrap(country~cost)+ylab('Billion USD per year')+
     scale_fill_manual(values = cost_col)+
-    theme_bw()+ theme(axis.title.x = element_blank(),
-                      axis.text.x = element_text(angle = 45))
+    theme_bw()+ theme(axis.title.x = element_blank())
   plot(v2)
   
   # difference compared to baseline
-  # df_cost_base = df_cost %>% filter(scenario == scname[1]) %>% 
-  #   rename(valueB = value) %>% select(-scenario) 
-  # 
-  # df_cost2 = df_cost %>% filter(scenario != scname[1]) %>%
-  #   left_join(df_cost_base) %>% 
-  #   mutate(valueB = if_else(is.na(valueB),0,valueB)) %>% 
-  #   mutate(diff = round((value - valueB),3) )
+  df_cost_base = df_cost %>% filter(scenario == scname[1]) %>% 
+    rename(valueB = value) %>% select(-scenario) 
+  
+  df_cost2 = df_cost %>% filter(scenario != scname[1]) %>%
+    left_join(df_cost_base) %>% 
+    mutate(valueB = if_else(is.na(valueB),0,valueB)) %>% 
+    mutate(diff = round((value - valueB),3) )
   # 
   # V3 = ggplot(df_cost2 %>% filter(!country %in% c('AFG','CHN')),aes(x = type, y = value, fill = type,alpha = cost))+
   #   geom_bar( stat = "identity", position = "stack", color = 'grey40',size = 0.1) +
@@ -223,7 +218,7 @@ if (shiny_mode){} else {
   #   facet_wrap(~scenario)+ylab('Billion USD per year')+
   #   theme_bw()+ theme(axis.title.x = element_blank() )
   # plot(V4)
-  # 
+  
   dev.off()
 
 }
@@ -244,9 +239,7 @@ energy_for_water.df = bind_rows( lapply(  scen_chk, function( sc ){
 			
 	} ) )
 
-energy_for_water.shiny = energy_for_water.df %>% 
-  mutate(value = (value * 30 *24* 1e-6), #conversion from MWmonth to TWh
-         unit = 'TWh') 
+energy_for_water.shiny = energy_for_water.df
 
 # irrigation_gw_diversion and so on are to be consider en for water or for irrigation/land use? 
 # maybe en for water would be just for urban and rural water management. 
@@ -280,9 +273,7 @@ water_for_energy.df = bind_rows( lapply(  scen_chk, function( sc ){
 			
 	} ) )
 		
-water_for_energy.shiny = water_for_energy.df %>% 
-  mutate(value = (value * 30 * 1e-3), #conversion from MCM/day x month to km3
-         unit = 'km3') 
+water_for_energy.shiny = water_for_energy.df
 
 water_for_irrigation.df = bind_rows( lapply(  scen_chk, function( sc ){
 	
@@ -298,9 +289,7 @@ water_for_irrigation.df = bind_rows( lapply(  scen_chk, function( sc ){
 			
 	} ) )
 
-water_for_irrigation.shiny = water_for_irrigation.df %>% 
-  mutate(value = (value * 30 * 1e-3), #conversion from MCM/day x month to km3
-         unit = 'km3') 
+water_for_irrigation.shiny = water_for_irrigation.df
 
 biomass_for_energy.df = bind_rows( lapply(  scen_chk, function( sc ){
   
@@ -477,31 +466,6 @@ if (shiny_mode){} else {
   dev.off() 
 }
 
-# INSTALLED CAPACITY load
-
-historical_capacity.df = bind_rows( lapply(  scen_chk, function( sc ){
-  
-  data.frame( res.list[[ sc ]]$historical_new_capacity ) %>% 
-    #    group_by( node, year_all ) %>% summarise(value =  sum( value ) )  %>% 
-    mutate( scenario = sc )
-  
-} ) )
-
-capacity.df = bind_rows( lapply(  scen_chk, function( sc ){
-  
-  data.frame( res.list[[ sc ]]$CAP ) %>% 
-    filter(year_all <= 2050) %>% 
-    mutate( scenario = sc )
-  
-} ) )
-
-new_capacity.df = bind_rows( lapply(  scen_chk, function( sc ){
-  
-  data.frame( res.list[[ sc ]]$CAP_NEW ) %>% 
-    filter(year_all <= 2050) %>% 
-    mutate( scenario = sc )
-  
-} ) )
 
 #### COMMODITIES ####
 # TO DO, fix color when plotting multiple graphs
@@ -525,10 +489,8 @@ energy_prod_by_source.df = bind_rows( lapply(  scen_chk, function( sc ){
 
 transmission_flow.df = bind_rows( lapply(  scen_chk, function( sc ){
   
-  merge( 	rbind(data.frame( res.list[[ sc ]]$output ) %>% 
+  merge( 	data.frame( res.list[[ sc ]]$output ) %>% 
             filter( grepl('trs',tec) ),
-            data.frame( res.list[[ sc ]]$input ) %>% 
-              filter( tec == 'trs_PAK_4|PAK'  ) ),
           data.frame( res.list[[ sc ]]$ACT ),
           by = c( 'node', 'tec', 'vintage', 'year_all', 'mode', 'time' ) ) %>% 
     filter(year_all <= 2050) %>% 
@@ -555,7 +517,7 @@ natioal_inp_exp = elec_imp_exp %>%
   rename(country = node)
 
 # tec = unique(res.list[[ scen_chk[1] ]]$output$tec)
-tech_type_enes.df = rbind( 	data.frame( type = 'coal', tec = tec[ grepl( 'coal', tec ) ] ),
+tech_type_ene.df = rbind( 	data.frame( type = 'coal', tec = tec[ grepl( 'coal', tec ) ] ),
                        data.frame( type = 'nuclear_ccs', tec = tec[ grepl( 'nuclear|igcc', tec ) ] ),
                        data.frame( type = 'gas', tec = tec[ grepl( 'gas', tec ) ] ),
                        data.frame( type = 'hydro', tec = tec[ grepl( 'hydro', tec ) ] ),
@@ -584,7 +546,7 @@ theme_common = theme(legend.background = element_rect(fill="white",
                                                       colour ="black"))
 #-----------------------------
 
-energy_prod_by_source.df = energy_prod_by_source.df %>% left_join(tech_type_enes.df) %>% 
+energy_prod_by_source.df = energy_prod_by_source.df %>% left_join(tech_type_ene.df) %>% 
   mutate(value = (value * 30 *24* 1e-6), #conversion from MWmonth to TWh
          unit = 'TWh')
 
@@ -651,9 +613,7 @@ elec_demand = demand_fixed.shiny %>% filter(year_all>2015 & year_all <2060 & com
 final_energy_by_use.shiny = final_energy_by_use.df %>% select(node,scenario,time,type,level,year_all,value,unit) %>% 
   bind_rows(elec_demand %>% select(node,scenario,type,level,year_all,value,unit) ) %>% select(-level) %>% 
   group_by_("node"  ,   "year_all", "time" ,  "scenario", "type" ,'unit') %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  mutate(value = (value * 30 *24* 1e-6), #conversion from MWmonth to TWh
-         unit = 'TWh')
+  summarise(value = sum(value)) %>% ungroup()
 type.shiny = unique(c(type.shiny,as.character( unique(final_energy_by_use.shiny$type)) ))
 
 
@@ -678,44 +638,6 @@ type.shiny = unique(c(type.shiny,as.character( unique(final_energy_by_use.shiny$
 # } ) )
 # 
 # sum(final_energy_by_out.df$value)-sum(final_energy_by_use.df$value) - sum(elec_demand$value)
-
-ene_historical_capacity.df = historical_capacity.df %>% left_join(tech_type_enes.df) %>% 
-  filter(!is.na(type)) %>% 
-  select(node,type,tec,year_all,scenario,value)
-
-ene_capacity.df = capacity.df %>% left_join(tech_type_enes.df) %>% 
-  filter(!is.na(type)) %>% 
-  select(node,tec,type,year_all,scenario,value) %>% 
-  bind_rows(ene_historical_capacity.df %>% filter(year_all < 2020) %>% #not clear why some values are assigned to 2020, also for nuclear, coal and gas
-              group_by(node,tec,type,scenario) %>%
-              summarise(value = sum(value)) %>% ungroup() %>% 
-              mutate(year_all = '2015') %>% 
-              select(node,tec,type,year_all,scenario,value)) %>% 
-  # bind_rows(ene_historical_capacity.df %>% filter(year_all == 2020) %>% 
-  #             group_by(node,type,year_all,scenario) %>%
-  #             summarise(value = sum(value)) %>% ungroup() %>% 
-  #             select(node,type,year_all,scenario,value)) %>% 
-  group_by(node,tec,type,year_all,scenario) %>%
-  summarise(value = sum(value)) %>% ungroup()
-
-new_ene_capacity.df = new_capacity.df %>% left_join(tech_type_enes.df) %>% 
-  filter(!is.na(type)) %>% 
-  select(node,type,tec,year_all,scenario,value) %>% 
-  bind_rows(ene_historical_capacity.df %>% filter(year_all <2020))
-
-new_ene_capacity_plot = new_ene_capacity.df %>% 
-  mutate(year = as.numeric(year_all)) %>% 
-  select(node,type,tec,year,scenario,value) %>% 
-  mutate(country = gsub('_.*','',node)) %>% 
-  group_by(country,type,year,scenario) %>% 
-  summarise(value = sum(value))
-
-ggplot(new_ene_capacity_plot %>% filter(scenario == scen_chk[2], country != 'CHN'),aes(x = year,y = value,fill = type))+
-  geom_bar( stat = "identity", position = "stack") +
-  facet_wrap(~country)+
-  scale_fill_manual(name = 'technology',values = en_source_col)+
-  theme_bw()+ ggtitle(paste0('Power plants new installed capacity. Scenario: ',scname[2]))
-
 
 # IN SCENARIO WITH SDGS, ELECTRICITY DISTRIBUTION OUTPUTS IN IRRIGATION FINAL IS
 # HIGHER THAN THE REQUIREMENTS OF IRRIGATION TECHNOLOGIES, 1800 TWh
@@ -751,36 +673,19 @@ final_en_plot = final_energy_by_use.df %>% select(node,type,level,year_all,scena
   mutate(year = as.numeric( year_all) ) %>% 
   filter(country != 'CHN')
 
-ene_capacity_plot = ene_capacity.df %>% 
-  mutate(year = as.numeric(year_all)) %>% 
-  select(node,type,year,scenario,value) %>% 
-  mutate(country = gsub('_.*','',node)) %>% 
-  filter(country != 'CHN')
-
-plist = list()
 plist1 = list()
 plist2 = list()
 pdf( 'energy_mix.pdf', width = 7, height = 6 ) 
-maxy = max((ene_capacity_plot %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
-maxy1 = max((en_mix_plot %>% filter(value > 0)%>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
-min1 = min((en_mix_plot %>% filter(value < 0) %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
+maxy = max((en_mix_plot %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
 maxy2 = max((final_en_plot %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
 for (i in seq_along(scen_chk) )  {   
-  
-  plist[[i]] =  ggplot(ene_capacity_plot %>% filter(scenario == scen_chk[i]),aes(x = year,y = value,fill = type))+
-    geom_bar( stat = "identity", position = "stack") +
-    geom_vline(xintercept = 2017.5,linetype = 'longdash',color = 'grey40')+
-    facet_wrap(~country)+ylim(0,maxy)+
-    scale_fill_manual(name = 'technology',values = en_source_col)+
-    theme_bw()+ ggtitle(paste0('Power -plant installed capacity. Scenario: ',scname[i]))
-  
   par(mfrow = c(i,1))
   plist1[[i]] = ggplot(en_mix_plot %>% filter(scenario == scen_chk[i]),
                        aes(x = year,y = value,fill = factor(type , levels = en_source_order$type)))+
     geom_bar( stat = "identity", position = "stack") +
-    facet_wrap(~country)+ylim(min1,maxy1)+ylab('TWh')+
+    facet_wrap(~country)+ylim(0,maxy)+ylab('TWh')+
     scale_fill_manual(name = 'technology',values = en_source_col)+
-    theme_bw()+ ggtitle(paste0('Electricity supply. Scenario: ',scname[i]))+
+    theme_bw()+ ggtitle(paste0('Electrcity supply. Scenario: ',scname[i]))+
     theme_common
   
   plist2[[i]] = ggplot(final_en_plot %>% filter(scenario == scen_chk[i]),
@@ -788,21 +693,18 @@ for (i in seq_along(scen_chk) )  {
     geom_bar( stat = "identity", position = "stack") +
     facet_wrap(~country)+ylim(0,maxy2)+ylab('TWh')+
     scale_fill_manual(name = 'end use',values = en_final_col)+
-    theme_bw()+ ggtitle(paste0('Electricity use. Scenario: ',scname[i]))+
+    theme_bw()+ ggtitle(paste0('Electrcity use. Scenario: ',scname[i]))+
     theme_common
 } 
-grid.arrange(grobs=plist)
 grid.arrange(grobs=plist1)
 
-maxy = max((en_mix_plot_month %>% filter(value > 0) %>% 
-              group_by(country,month,year,scenario,time) %>% summarise(value = sum(value)) %>% ungroup())$value)*1.05
-miny = min((en_mix_plot_month)$value)
+maxy = max((en_mix_plot_month %>% group_by(country,month,year,scenario,time) %>% summarise(value = sum(value)) %>% ungroup())$value)
 for (i in seq_along(scen_chk) )  { 
   par(mfrow = c(i,1))
   VAR2 = ggplot(en_mix_plot_month %>% filter(scenario == scen_chk[i]),
                 aes(x = month,y = value,fill = factor(type , levels = en_source_order$type)))+
     geom_bar( stat = "identity", position = "stack") +
-    facet_wrap(country~year)+ylim(miny,maxy)+ylab('TWh')+
+    facet_wrap(country~year)+ylim(0,maxy)+ylab('TWh')+
     scale_fill_manual(name = 'technology',values = en_source_col)+
     scale_x_continuous(breaks = c(1,3,6,9,12))+
     theme_bw()+ ggtitle(paste0('Electrcity supply. Scenario: ',scname[i]))
@@ -812,6 +714,80 @@ grid.arrange(grobs=plist2)
 dev.off() 
 
 }
+
+# INSTALLED CAPACITY + plot HISTORICAL
+
+historical_capacity.df = bind_rows( lapply(  scen_chk, function( sc ){
+  
+  data.frame( res.list[[ sc ]]$historical_new_capacity ) %>% 
+    #    group_by( node, year_all ) %>% summarise(value =  sum( value ) )  %>% 
+    mutate( scenario = sc )
+  
+} ) )
+
+tech_type_ene.df = rbind( 	data.frame( type = 'coal', tec = tec[ grepl( 'coal', tec ) ] ),
+                           data.frame( type = 'nuclear_ccs', tec = tec[ grepl( 'nuclear|igcc', tec ) ] ),
+                           data.frame( type = 'gas', tec = tec[ grepl( 'gas', tec ) ] ),
+                           data.frame( type = 'hydro', tec = tec[ grepl( 'hydro', tec ) ] ),
+                           data.frame( type = 'oil', tec = tec[ grepl( 'oil', tec ) ] ),
+                           data.frame( type = 'wind', tec = tec[ grepl( 'wind', tec ) ] ),
+                           data.frame( type = 'solar', tec = tec[ grepl( 'solar', tec ) ] ),
+                           data.frame( type = 'geothermal', tec = tec[ grepl( 'geothermal', tec ) ] ),
+                           data.frame( type = 'rural gen.', tec = c('ethanol_genset','irri_diesel_genset','agri_pv') ))
+
+ene_historical_capacity.df = historical_capacity.df %>% left_join(tech_type_ene.df) %>% 
+  filter(!is.na(type)) %>% 
+  select(node,type,tec,year_all,scenario,value)
+
+capacity.df = bind_rows( lapply(  scen_chk, function( sc ){
+  
+  data.frame( res.list[[ sc ]]$CAP ) %>% 
+    filter(year_all <= 2050) %>% 
+    mutate( scenario = sc )
+  
+} ) )
+
+ene_capacity.df = capacity.df %>% left_join(tech_type_ene.df) %>% 
+  filter(!is.na(type)) %>% 
+  select(node,type,tec,year_all,scenario,value)
+  # bind_rows(ene_historical_capacity.df %>% 
+  #             group_by(node,type,scenario) %>% 
+  #             mutate(value = cumsum(value)))
+
+ene_capacity_plot = ene_capacity.df %>% 
+  mutate(year = as.numeric(year_all)) %>% 
+  select(node,type,tec,year,scenario,value) %>% 
+  mutate(country = gsub('_.*','',node)) 
+
+ggplot(ene_capacity_plot %>% filter(scenario == scen_chk[2]),aes(x = year,y = value,fill = type))+
+  geom_bar( stat = "identity", position = "stack") +
+  facet_wrap(~country)+
+  scale_fill_brewer(type = 'qual',palette = 2)+
+  theme_bw()+ ggtitle(paste0('Power -plant installed capacity. Scenario: ',scname[2]))
+
+new_ene_capacity.df = bind_rows( lapply(  scen_chk, function( sc ){
+  
+  data.frame( res.list[[ sc ]]$CAP_NEW ) %>% 
+    filter(year_all <= 2050) %>% 
+    mutate( scenario = sc )
+  
+} ) ) %>% left_join(tech_type_ene.df) %>% 
+  filter(!is.na(type)) %>% 
+  select(node,type,tec,year_all,scenario,value) %>% 
+  bind_rows(ene_historical_capacity.df )
+
+new_ene_capacity_plot = new_ene_capacity.df %>% 
+  mutate(year = as.numeric(year_all)) %>% 
+  select(node,type,tec,year,scenario,value) %>% 
+  mutate(country = gsub('_.*','',node)) %>% 
+  group_by(country,type,year,scenario) %>% 
+  summarise(value = sum(value))
+
+ggplot(new_ene_capacity_plot %>% filter(scenario == scen_chk[2]),aes(x = year,y = value,fill = type))+
+  geom_bar( stat = "identity", position = "stack") +
+  facet_wrap(~country)+
+  scale_fill_brewer(type = 'qual',palette = 2)+
+  theme_bw()+ ggtitle(paste0('Power plants new installed capacity. Scenario: ',scname[2]))
 
 # CROP AREA and WATER
 
@@ -831,23 +807,19 @@ area_by_crop.df = bind_rows( lapply(  scen_chk, function( sc ){
 tech_type_crop.df = rbind( data.frame( type = 'fallow_crop', tec = tec[ grepl( 'fallow_crop', tec ) ] ),
                            data.frame( type = 'cotton', tec = tec[ grepl( 'cotton', tec ) ] ),
                            data.frame( type = 'fodder', tec = tec[ grepl( 'fodder', tec ) ] ),
-                           data.frame( type = 'fruit', tec = tec[ grepl( 'fruit', tec ) ] ),
                            data.frame( type = 'pulses', tec = tec[ grepl( 'pulses', tec ) ] ),
                            data.frame( type = 'maize', tec = tec[ grepl( 'maize', tec ) ] ),
                            data.frame( type = 'rice', tec = tec[ grepl( 'rice', tec ) ] ),
                            data.frame( type = 'sugarcane', tec = tec[ grepl( 'sugarcane', tec ) ] ),
-                           data.frame( type = 'vegetables', tec = tec[ grepl( 'vegetables', tec ) ] ),
                            data.frame( type = 'wheat', tec = tec[ grepl( 'wheat', tec ) ] ) )
 
 #graphic settings ------------------
 crop_col = c('cotton' =    "#1b9e77",
                   "fodder" =    "#d95f02",
-                  'fruit'  =    '#b1b1b1',
                   'pulses' =    "#7570b3",
                   'maize' =    "#25bad9",
                   'rice' =      "#e7298a",
                   'sugarcane' = "#66a61e",
-                  'vegetables' = '#005ad1',
                   'wheat' =     '#e6ab02'
 )
 
@@ -862,40 +834,6 @@ area_by_crop.shiny = area_by_crop.df %>% select(-tec) %>%
   group_by_("node"  ,   "year_all", "time" ,  "scenario", "type" ) %>% 
   summarise(value = sum(value)) %>% ungroup()
 type.shiny = unique(c(type.shiny,as.character( unique(area_by_crop.shiny$type)) ))
-
-crop_capacity.df = capacity.df %>% filter(grepl('crop_|irr_|rainfed',tec)) %>% 
-  group_by(node,tec,year_all,scenario) %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  bind_rows(historical_capacity.df %>% 
-              filter(year_all < 2020,
-                     grepl('crop_|irr_|rainfed',tec))
-            )
-# first only plot total land for crop
-crop_capacity_plot1 = crop_capacity.df %>% filter(grepl('crop_',tec) ) %>% 
-  left_join(tech_type_crop.df) %>% 
-  mutate(country = gsub('_.*','',node)) %>% 
-  group_by(country,type,year_all,scenario) %>% 
-  summarise(value = sum(value)) %>% ungroup()
-
-ggplot(crop_capacity_plot1 %>% filter(scenario == scen_chk[2]),
-         aes(x = year_all,y = value,fill = factor(type , levels = crop_order$type)))+
-  geom_bar( stat = "identity", position = "stack") +
-  facet_wrap(~country)+ylab('Mha')+
-  scale_fill_manual(name = 'crop',values = crop_col)+
-  theme_bw()+ ggtitle(paste0('crop area. Scenario: '))
-
-new_capacity.df %>% filter(grepl('irr_',tec) ) %>% 
-  left_join(tech_type_crop.df) %>% 
-  mutate(country = gsub('_.*','',node)) %>% 
-  mutate(method = if_else(grepl('rainfed_',tec),'rainfed','irrigated')) %>% 
-  group_by(country,type,method,year_all,scenario) %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  filter(scenario == scen_chk[2]) %>% 
-  ggplot(. ,aes(x = year_all,y = value,fill = factor(type , levels = crop_order$type)))+
-  geom_bar( stat = "identity", position = "stack") +
-  facet_wrap(~country)+ylab('Mha')+
-  scale_fill_manual(name = 'crop',values = crop_col)+
-  theme_bw()+ ggtitle(paste0('crop area. Scenario: '))
 
 if (shiny_mode){} else {
   crop_area_plot_year = area_by_crop.df %>% 
@@ -913,33 +851,8 @@ if (shiny_mode){} else {
     mutate(month = as.numeric(time)) %>% 
     filter(country != 'CHN')
   
-  # irrigation and rainfed capacity
-  crop_capacity_plot2 = crop_capacity.df %>% filter(grepl('irr_|rainfed',tec) ) %>% 
-    left_join(tech_type_crop.df) %>% 
-    mutate(country = gsub('_.*','',node),
-           year = as.numeric(year_all)) %>% 
-    mutate(method = if_else(grepl('rainfed_',tec),'rainfed','irrigated')) %>% 
-    group_by(country,type,method,year,scenario) %>% 
-    summarise(value = sum(value)) %>% ungroup() %>% 
-    filter(country != 'CHN')
-  
   plist = list()
   pdf( 'crop_land.pdf', onefile = TRUE) 
-  maxy = max((crop_capacity_plot2 %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
-  for (i in seq_along(scen_chk) )  { 
-    
-    plist[[i]] = ggplot(crop_capacity_plot2 %>% filter(scenario == scen_chk[i]),
-         aes(x = year,y = value,fill = factor(type , levels = crop_order$type),alpha = method))+
-    geom_bar( stat = "identity", position = "stack") +
-    geom_vline(xintercept = 2017.5,linetype = 'longdash',color = 'grey40')+
-    facet_wrap(~country)+ylim(0,maxy)+ylab('Mha')+
-    scale_fill_manual(name = 'crop',values = crop_col)+
-    scale_alpha_manual(values = c(irrigated = 1,rainfed = 0.5))+
-    scale_x_continuous(breaks = c(2015,2020,2030,2040,2050))+
-    theme_bw()+ ggtitle(paste0('crop installed capacity. Scenario: ',scname[i]))
-    
-  }
-  grid.arrange(grobs=plist)
   maxy = max((crop_area_plot_year %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
   for (i in seq_along(scen_chk) )  {   
 
@@ -1020,19 +933,14 @@ water_source_col = c( "fossil gw" =     "#a6cee3",
                   'other' = '#dcdcdc'
                   
 )
-# in km3/month, if summed is km3/year
+
 water_by_source.df = surface_water.df %>% bind_rows(desal_and_gw.df) %>% 
   left_join(tech_type_waterS.df) %>% 
-  mutate(type = if_else(is.na(type),'other',as.character(type)) ) %>% 
-  left_join( ., data.frame( time = as.character(seq(1:12)), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
-  mutate(value = value * days / 1e3) %>%  #conversion from MCM/day x month to km3/month
-  select(-days)
+  mutate(type = if_else(is.na(type),'other',as.character(type)) )
 
 water_by_source.shiny = water_by_source.df %>% select(-commodity,-level,-tec) %>% 
   group_by_("node"  ,   "year_all", "time" ,  "scenario", "type" ) %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  # mutate(value = (value * 30 * 1e-3), #conversion from MCM/day x month to km3
-  mutate( unit = 'km3') 
+  summarise(value = sum(value)) %>% ungroup()
 type.shiny = unique(c(type.shiny,as.character( unique(water_by_source.shiny$type)) ))
 
 # Water final
@@ -1082,40 +990,20 @@ water_for_crops.shiny = final_water_by_use.df %>% filter(level == 'irrigation_fi
   mutate(type = gsub('.*\\_', '', tec)) %>% 
   select(-tec,-commodity,-level) %>% 
   group_by_("node"  ,   "year_all", "time" ,  "scenario", "type" ) %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  mutate(value = (value * 30 * 1e-3), #conversion from MCM/day x month to km3
-         unit = 'km3') 
+  summarise(value = sum(value)) %>% ungroup()
 
 water_demand = demand_fixed.shiny %>% filter(year_all>2015 & year_all <2060 & commodity == 'freshwater' & !level %in% c('inflow','river_in') ) %>% 
   mutate(type = gsub('_final',' demand',level))
 
 final_water_by_use.df = final_water_by_use0.df %>% select(node,scenario,time,type,level,year_all,value) %>% 
-  bind_rows(water_demand %>% select(node,scenario,time,type,level,year_all,value) ) %>% 
-  left_join( ., data.frame( time = as.character(seq(1:12)), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
-  mutate(value = value * days / 1e3) %>%  #conversion from MCM/day x month to km3/month
-  select(-days)
-
+  bind_rows(water_demand %>% select(node,scenario,time,type,level,year_all,value) )
 final_water_by_use.shiny = final_water_by_use.df %>% select(-level) %>% 
   group_by_("node"  ,   "year_all", "time" ,  "scenario", "type" ) %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  # mutate(value = (value * 30 * 1e-3), #conversion from MCM/day x month to km3
-  mutate( unit = 'km3') 
+  summarise(value = sum(value)) %>% ungroup()
 type.shiny = unique(c(type.shiny,as.character( unique(water_for_crops.shiny$type)) ,
                       as.character( unique(final_water_by_use.shiny$type)) ))
 
-## calculation of capacity and plot history with results
-wat_historical_capacity.df = historical_capacity.df %>% 
-  filter(year_all < 2020,
-         grepl('sw_diversion|gw_diversion',tec)) %>% 
-  group_by(node,tec,year_all,scenario) %>% 
-  summarise(value = sum(value)) %>% ungroup()
 
-wat_capacity.df = capacity.df %>% filter(grepl('sw_diversion|gw_diversion',tec)) %>% 
-  group_by(node,tec,year_all,scenario) %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  bind_rows( wat_historical_capacity.df )
-
-## example of map plot with groundwater
 groundwater_extr.df = water_by_source.df %>% 
   filter(type %in% c('fossil gw','renewable gw')) %>% 
   group_by(node,year_all,time,scenario) %>% 
@@ -1172,15 +1060,6 @@ ggplot() +
 # PLOT WATER SUPPLY AND FINAL USE
 if (shiny_mode){} else {
   
-  wat_capacity_plot.df = wat_capacity.df %>% 
-    mutate(country = gsub('_.*','',node),
-           year = as.numeric(year_all)) %>% 
-    group_by(country,tec,year,scenario) %>% 
-    summarise(value = sum(value)) %>% ungroup() %>% 
-    mutate(source = if_else(grepl('_sw_',tec),'surface','groundwater'),
-           tec = gsub('gw_|sw_','',tec)) %>% 
-    filter(country != 'CHN')
-  
   water_by_source_plot_year = water_by_source.df %>% 
     mutate(country = gsub('_.*','',node)) %>% 
     group_by(country,type,year_all,scenario) %>% 
@@ -1206,9 +1085,6 @@ if (shiny_mode){} else {
   crop_water_use_plot_yr = final_water_by_use0.df %>% select(-type) %>% filter(level == 'irrigation_final') %>% 
     mutate(type = gsub('.*\\_', '', tec)) %>% 
     mutate(country = gsub('_.*','',node)) %>% 
-    left_join( ., data.frame( time = as.character(seq(1:12)), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
-    mutate(value = value * days / 1e3) %>%  #conversion from MCM/day x month to km3/month
-    select(-days) %>% 
     group_by(country,type,year_all,scenario) %>% 
     summarise(value = sum(value)) %>% ungroup() %>% 
     mutate(year = as.numeric( year_all) ) %>% 
@@ -1217,43 +1093,31 @@ if (shiny_mode){} else {
   crop_water_use_plot_mth = final_water_by_use0.df %>% select(-type) %>% filter(level == 'irrigation_final') %>% 
     mutate(type = gsub('.*\\_', '', tec)) %>% 
     mutate(country = gsub('_.*','',node)) %>% 
-    left_join( ., data.frame( time = as.character(seq(1:12)), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
-    mutate(value = value * days / 1e3) %>%  #conversion from MCM/day x month to km3/month
-    select(-days) %>% 
     group_by(country,type,time,year_all,scenario) %>% 
     summarise(value = sum(value)) %>% ungroup() %>% 
     mutate(year = as.numeric( year_all) ) %>% 
     mutate(month = as.numeric(time)) %>% 
     filter(country != 'CHN')
   
-  plist = list()
   plist1 = list()
   plist2 = list()
   plist3 = list()
   pdf( 'water_supply_and_final_use.pdf', onefile = TRUE) 
-  maxy1 = max((water_by_source_plot_year %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)*1.05
-  maxy2 = max((final_water_plot %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)*1.05
-  maxy3 = max((crop_water_use_plot_yr %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)*1.05
+  maxy1 = max((water_by_source_plot_year %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
+  maxy2 = max((final_water_plot %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
+  maxy3 = max((crop_water_use_plot_yr %>% group_by(country,year,scenario) %>% summarise(value = sum(value)) %>% ungroup())$value)
 
-  for (i in seq_along(scen_chk) )  { 
-    plist[[i]] = ggplot(wat_capacity_plot.df %>% filter(scenario == scen_chk[i]), aes(x = year, y = value, fill = tec, alpha = source))+
-      geom_bar( stat = "identity", position = "stack") +
-      geom_vline(xintercept = 2017.5,linetype = 'longdash',color = 'grey40')+
-      facet_wrap(~country)+ggtitle(paste0('water tec capacity. Scenario: ',scname[i]))+
-      scale_color_brewer(type = 'qual',palette = 2)+
-      scale_alpha_manual(values = c(surface = 1,groundwater = 0.5))+
-      theme_bw()
-    
+  for (i in seq_along(scen_chk) )  {   
     plist1[[i]]= ggplot(water_by_source_plot_year %>% filter(scenario == scen_chk[i]),aes(x = year,y = value,fill = type))+
       geom_bar( stat = "identity", position = "stack") +
-      facet_wrap(~country)+ylim(0,maxy1)+ylab('km3')+
+      facet_wrap(~country)+ylim(0,maxy1)+ylab('MCM')+
       scale_fill_manual(name = 'type',values = water_source_col)+
       theme_bw()+ ggtitle(paste0('water sources. Scenario: ',scname[i]))+
       theme(axis.title.x = element_blank())
     
     plist2[[i]]= ggplot(final_water_plot %>% filter(scenario == scen_chk[i]),aes(x = year_all,y = value,fill = type))+
       geom_bar( stat = "identity", position = "stack") +
-      facet_wrap(~country)+ylim(0,maxy2)+ylab('km3')+
+      facet_wrap(~country)+ylim(0,maxy2)+ylab('MCM')+
       scale_fill_manual(name = 'type',values = water_final_col)+
       theme_bw()+ ggtitle(paste0('water final use. Scenario: ',scname[i]))+
       theme(axis.title.x = element_blank())
@@ -1261,19 +1125,18 @@ if (shiny_mode){} else {
     plist3[[i]]= ggplot(crop_water_use_plot_yr %>% filter(scenario == scen_chk[i]),
                         aes(x = year_all,y = value,fill = factor(type , levels = crop_order$type)))+
       geom_bar( stat = "identity", position = "stack") +
-      facet_wrap(~country)+ylim(0,maxy3)+ylab('km3')+
+      facet_wrap(~country)+ylim(0,maxy3)+ylab('MCM')+
       scale_fill_manual(name = 'technology',values = crop_col)+
       theme_bw()+ ggtitle(paste0('Crops water use. Scenario: ',scname[i]))+
       theme(axis.title.x = element_blank())
   }
-  grid.arrange(grobs=plist)
   grid.arrange(grobs=plist1)
   maxy = max((water_by_source_plot_month %>% group_by(country,year,scenario,time) %>% summarise(value = sum(value)) %>% ungroup())$value)
   for (i in seq_along(scen_chk) )  { 
     par(mfrow = c(i,1))
     VAR2 = ggplot(water_by_source_plot_month %>% filter(scenario == scen_chk[i]),aes(x = month,y = value,fill = type))+
       geom_bar( stat = "identity", position = "stack") +
-      facet_wrap(country~year)+ylim(0,maxy)+ylab('km3')+
+      facet_wrap(country~year)+ylim(0,maxy)+ylab('MCM')+
       scale_fill_manual(name = 'type',values = water_source_col)+
       theme_bw()+ ggtitle(paste0('water sources. Scenario: ',scname[i]))+
       theme(axis.title.x = element_blank())
@@ -1288,7 +1151,7 @@ if (shiny_mode){} else {
     VAR2 = ggplot(crop_water_use_plot_mth %>% filter(scenario == scen_chk[i]),
                   aes(x = month,y = value,fill = factor(type , levels = crop_order$type)))+
       geom_bar( stat = "identity", position = "stack") +
-      facet_wrap(country~year)+ylim(0,maxy)+ylab('km3')+
+      facet_wrap(country~year)+ylim(0,maxy)+ylab('MCM')+
       scale_fill_manual(name = 'technology',values = crop_col)+
       theme_bw()+ ggtitle(paste0('Crops water use. Scenario: ',scname[i]))+
       theme(axis.title.x = element_blank())
@@ -1357,6 +1220,7 @@ env_flow.df = bind_rows( lapply(  scen_chk, function( sc ){
           by = c( 'node', 'tec', 'vintage', 'year_all', 'mode', 'time' ) ) %>%
     filter(year_all <= 2050) %>%
     mutate( value = value.x * value.y ) %>%
+  
     dplyr::select( node, tec, year_all, time, value ) %>%
     #    group_by( node, year_all ) %>% summarise(value =  sum( value ) )  %>%
     mutate( scenario = sc )
@@ -1379,9 +1243,73 @@ river_flow.coord = river_flow.df %>%
             by = c("node_out" = "node")) %>% 
   dplyr::select(tec,scenario,year_all,time,value,node_in,node_out,x.in,y.in,x.out,y.out)
 
-river_flow.shiny = river_flow.df %>% select(-tec,-node_out) %>% 
-  rename(node = node_in) %>% 
-  mutate(unit = 'MCM/day')
+river_flow.shiny = river_flow.coord
+
+# Difference of env_flow (from GAMS & from naturalized flow data) 
+
+diff_env_flow.df = env_flow.df %>%  
+  left_join(environmental_flow.df %>%   
+              filter( year_all >= 2020) %>%  
+              rename(value = value1)) %>%  
+  mutate( diff = ((value1 - value) / value1) * 100) %>%  
+  
+#Plotting diff_env_flow map for all nodes (not sure, if it's okay)( ranges needs to be added) 
+env_plot_data = diff_env_flow.df %>%   
+  group_by(node,year_all,scenario) %>%   
+  summarise(value = mean(value)) %>% ungroup()  
+
+#basin.tidy2 has the value data  
+basin.tidy2 <- dplyr::left_join(basin.tidy, env_plot_data, by='node') %>%   
+  filter(!is.na(value))  
+
+# if diff (in diff_ev_flow) > 50 , color = #CC0000 ,legend
+# diff > 40 , color = #FF0000
+# diff > 30 , color = #FF3333
+# diff > 20 , color = #FF6666
+# diff > 10 , color = #FF9999
+# diff <= 10, color = #FFCCCC
+# need to add in following map plot 
+
+ggplot() +  
+  geom_polygon(data = basin.tidy, aes(long,lat, group=group),color='black',fill = "#f5f5f2",size = 0.1) +  
+  geom_polygon(data = basin.tidy2, aes(long,lat, group=group,fill=value),alpha=0.8,color='black',size = 0.1) +  
+  coord_map("azequalarea") +  
+  #  facet_wrap(as.formula(paste("~", input$grouping)))+  
+  facet_wrap(year_all~scenario)+  
+  scale_fill_gradient(low = "#56B1F7", high = "#132B43")+  
+  theme_map  
+
+# Now,for comparison of cost with baseline0 scenario (perc_increase) (needs to be checked)
+
+df_cost_base = df_cost %>% filter(scenario == scname[1]) %>%  
+  rename(valueB = value) %>% select(-scenario)  
+
+df_cost2 = df_cost %>% filter(scenario != scname[1]) %>% 
+  left_join(df_cost_base) %>%  
+  mutate(valueB = if_else(is.na(valueB),0,valueB)) %>%  
+  mutate(diff = round((value - valueB),3) ) 
+
+V3 = ggplot(df_cost2 %>% filter(!country %in% c('AFG','CHN')),aes(x = type, y = value, fill = type,alpha = cost))+ 
+  geom_bar( stat = "identity", position = "stack", color = 'grey40',size = 0.1) + 
+  facet_wrap(country~scenario)+ylab('Billion USD per year')+ 
+  scale_fill_manual(values = cost_col)+ 
+  scale_alpha_discrete(range=c(0.4, 1))+ 
+  theme_bw()+ theme(axis.title.x = element_blank(), 
+                    axis.text.x = element_text(angle = 30)) 
+plot(V3) 
+
+df_cost3 = df_cost2 %>% group_by(country,scenario,cost) %>%  
+  summarise(value = sum(value), valueB = sum(valueB)) %>% ungroup() %>%  
+  mutate(diff = round((value - valueB),3) ) 
+
+V4 = ggplot(df_cost3 %>% filter(!country %in% c('AFG','CHN')),aes(x = country, y = value, fill = cost))+ 
+  geom_bar( stat = "identity", position = "stack", color = 'grey40',size = 0.1) + 
+  facet_wrap(~scenario)+ylab('Billion USD per year')+ 
+  theme_bw()+ theme(axis.title.x = element_blank() ) 
+plot(V4) 
+
+dev.off() 
+
 
 # highlight annual transfer for most important sections: boerders and outlet
 
@@ -1664,13 +1592,13 @@ if (shiny_mode){} else {
     # par(mfrow = c(i,1))
     land_cost_plot = ggplot(agriculture_land_cost.df %>% filter(scenario == scen_chk[i]),aes(x = year_all,y = value,color = country))+
       geom_line()+theme_bw()+
-      scale_color_manual(values=country_colors)+ylim(c(0,max_size))+
+      scale_color_manual(values=country_colors)+
       ylab(unique(agriculture_land_cost.df$unit))+ ggtitle(paste0('Land costs. Scenario: ',scen_chk[i]))
     
     crop_cost_plot = ggplot(crop_product_prices.df %>% filter(scenario == scen_chk[i]),aes(x = year_all,y = value,color = country))+
       geom_line(size = 0.8)+theme_bw()+
       facet_wrap(~commodity)+
-      scale_color_manual(values=country_colors)+ylim(c(0,max_size2))+
+      scale_color_manual(values=country_colors)+
       ylab('USD/ton')+ ggtitle(paste0('products costs. Scenario: ',scen_chk[i]))
 
     two_land_plot = grid.arrange(land_cost_plot,crop_cost_plot, heights = c(0.4,0.6))
@@ -1683,7 +1611,7 @@ if (shiny_mode){} else {
     elec_cost_plot = ggplot(final_elec_cost.df %>% filter(scenario == scen_chk[i]),aes(x = time,y = value,color = country))+
       geom_line(size = 0.8)+theme_bw()+
       facet_wrap(~year_all)+
-      scale_color_manual(values=country_colors)+ylim(c(0,max_size))+
+      scale_color_manual(values=country_colors)+
       ylab('USD/kWh') + xlab('month') + ggtitle(paste0('electricity costs. Scenario: ',scen_chk[i]))+
       scale_x_continuous(breaks = c(1,3,6,9,12))
 
@@ -1691,14 +1619,12 @@ if (shiny_mode){} else {
   }
   
   max_size = max(final_water_cost.df$value)
-  max_size1 = max((final_water_cost.df %>% group_by(scenario,commodity,year_all,time,unit) %>%
-                    summarise(value = mean(value)) )$value)
   for (i in seq_along(scen_chk) )  {
     # par(mfrow = c(i,1))
     water_cost_plot = ggplot(final_water_cost.df %>% filter(scenario == scen_chk[i]),aes(x = time,y = value,color = country))+
       geom_line(size = 0.8)+theme_bw()+
       facet_wrap(commodity~year_all,ncol = 4)+
-      scale_color_manual(values=country_colors)+ylim(c(0,max_size))+
+      scale_color_manual(values=country_colors)+
       ylab('USD/m^3') + xlab('month') + ggtitle(paste0('water costs. Scenario: ',scen_chk[i]))+
       scale_x_continuous(breaks = c(1,3,6,9,12))
 
@@ -1708,7 +1634,7 @@ if (shiny_mode){} else {
                                                      filter(scenario == scen_chk[i])
                                        ,aes(x = time,y = value,color = as.factor(year_all) ))+
       geom_line(size = 0.8)+theme_bw()+
-      facet_wrap(~commodity)+ylim(c(0,max_size))+
+      facet_wrap(~commodity)+
       ylab('USD/m^3') + xlab('month') + ggtitle(paste0('water costs for whole region. Scenario: ',scen_chk[i]))+
       scale_x_continuous(breaks = c(1,3,6,9,12))
 

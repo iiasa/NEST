@@ -1,5 +1,5 @@
 
-#source('C:/Users/parkinso/indus_ix/input_data_scripts/water_resources.r')
+#source('C:/Users/parkinso/indus_ix/input_data_scripts/water_resources_extreme.r')
 
 require(rgeos)
 require(rgdal)
@@ -65,8 +65,8 @@ climate_scenarios = unique( unlist( strsplit( climate_scenarios, '[.]' ) )[ seq(
 # create stack of climate model -scenario combinations for runoff
 ghm.list = lapply( climate_models, function( cc ){ 
 	r1 = lapply( climate_scenarios, function( ss ){ 
-		if( file.exists( paste0( 'input/hydroclimate_input/runoff_metersperday_',cc,'_', ss, '.tif' ) ) ){
-			r = stack( paste0( 'input/hydroclimate_input/runoff_metersperday_',cc,'_', ss, '.tif' ) )
+		if( file.exists( paste0( 'input/hydroclimate_input/extremerunoff_metersperday_',cc,'_', ss, '.tif' ) ) ){
+			r = stack( paste0( 'input/hydroclimate_input/extremerunoff_metersperday_',cc,'_', ss, '.tif' ) )
 			names(r) = c( sapply( c(2010,2020,2030,2040,2050,2060), function(yy){ return( paste( yy, seq(1,12,by=1), sep='.') ) } ) ) 
 			return(r)	
 			}
@@ -651,7 +651,7 @@ for( climate_scenario in climate_scenarios )
 
 			# plot the sites
 			hcol = c('blue','orange')
-			pdf( paste0( 'input/check/indus_hydro_sites_',climate_scenario,'_',climate_model,'.pdf'), width=6, height=6 )
+			pdf( paste0( 'input/check/indus_hydro_sites_',climate_scenario,'_',climate_model,'_extreme.pdf'), width=6, height=6 )
 			plot( basin.spdf, col = NA, border = NA, xlab = 'Longitude', ylab = 'Latitude', main = paste0( climate_model, ' : ', climate_scenario ) )
 			plot( 	do.call( rbind, lapply( c('IND','PAK','AFG','CHN','NPL','TJK','UZB','TKM','IRN'), function(cnt){ getData( 'GADM', country = cnt, level = 0 ) } ) ), 
 					col = alpha( c('khaki','lightgreen','lightblue','lightcoral','grey75','grey75','grey75','grey75','grey75'), alpha = 0.2 ),
@@ -832,10 +832,10 @@ for( climate_scenario in climate_scenarios )
 							round(rc.df,digits=4),
 							hydro_coeff.df )
 			out.df = out.df[ order( out.df$PID ), ]				
-			write.csv( out.df, paste0( 'input/basin_water_resources/basin_water_resources_',climate_model,'_',climate_scenario,'.csv' ), row.names=FALSE )
+			write.csv( out.df, paste0( 'input/basin_water_resources/basin_water_resources_',climate_model,'_',climate_scenario,'_extreme.csv' ), row.names=FALSE )
 
 			names(vo.df) = unlist( lapply( paste( 'natural_flow_km3_per_day', c(2015,2020,2030,2040,2050,2060), sep = '_' ), function( vv ){ return( paste( vv, c( seq(1,12,by=1) ), sep = '.' ) ) } ) ) 
-			write.csv( cbind( data.frame( PID = ups ), vo.df ), paste0('input/basin_water_resources/basin_environmental_flow_',climate_model,'_',climate_scenario,'.csv'), row.names=FALSE ) 
+			write.csv( cbind( data.frame( PID = ups ), vo.df ), paste0('input/basin_water_resources/basin_environmental_flow_',climate_model,'_',climate_scenario,'_extreme.csv'), row.names=FALSE ) 
 			
 			graphics.off()
 			
@@ -847,53 +847,53 @@ for( climate_scenario in climate_scenarios )
 	
 	}
 	
-# Summary plot
+# # Summary plot
 
 
-# import water resources
+# # import water resources
 
-wr.df = bind_rows( lapply( list.files( 'input/basin_water_resources', pattern = 'basin_water_resources_' ), function( fl ){
+# wr.df = bind_rows( lapply( list.files( 'input/basin_water_resources', pattern = 'basin_water_resources_' ), function( fl ){
 	
-	read.csv( paste0 ( 'input/basin_water_resources/', fl ) ) %>% 
-		select( names( . )[ grepl( 'runoff|recharge|PID', names( . ) ) ] ) %>%
-		melt( ., id = 'PID' ) %>%
-		mutate( dat = variable ) %>% 
-		mutate( type = unlist( strsplit( as.character( dat ), '_' ) )[ seq( 1, 5*length( dat ), by = 5 ) ],
-				year = unlist( strsplit( unlist( strsplit( as.character( dat ), '_' ) )[ seq( 5, 5*length( dat ), by = 5 ) ], '[.]' ) )[seq(1,2*length(dat),by=2)],
-				month = unlist( strsplit( as.character( dat ), '[.]' ) )[ seq( 2, 2*length( dat ), by = 2 ) ],
-				climate_model = unlist( strsplit( unlist( strsplit( fl, '.csv' ) )[1], '_' ) )[4],
-				climate_scenario = unlist( strsplit( unlist( strsplit( fl, '.csv' ) )[1], '_' ) )[5] ) %>%
-				left_join( ., data.frame( month = as.character(1:12), days = c(31,28.25,31,30,31,30,31,31,30,31,30,31) ) ) %>%
-				left_join( ., bind_rows( data.frame( month = as.character( c( 6, 7, 8, 9, 10, 11 ) ), season = 'kharif' ), bind_rows( data.frame( month = as.character( c( 12, 1, 2, 3, 4, 5 ) ), season = 'rabi' ) ) ) ) %>%
-				mutate( country = unlist( strsplit( as.character( PID ), '_') )[ seq( 1, 2*length( PID ), by = 2 ) ] ) %>% 
-				mutate( value = value * days, units = 'km3' ) %>% 
-		select( PID, country, climate_scenario, climate_model, type, units, year, season, month, value )
+	# read.csv( paste0 ( 'input/basin_water_resources/', fl ) ) %>% 
+		# select( names( . )[ grepl( 'runoff|recharge|PID', names( . ) ) ] ) %>%
+		# melt( ., id = 'PID' ) %>%
+		# mutate( dat = variable ) %>% 
+		# mutate( type = unlist( strsplit( as.character( dat ), '_' ) )[ seq( 1, 5*length( dat ), by = 5 ) ],
+				# year = unlist( strsplit( unlist( strsplit( as.character( dat ), '_' ) )[ seq( 5, 5*length( dat ), by = 5 ) ], '[.]' ) )[seq(1,2*length(dat),by=2)],
+				# month = unlist( strsplit( as.character( dat ), '[.]' ) )[ seq( 2, 2*length( dat ), by = 2 ) ],
+				# climate_model = unlist( strsplit( unlist( strsplit( fl, '.csv' ) )[1], '_' ) )[4],
+				# climate_scenario = unlist( strsplit( unlist( strsplit( fl, '.csv' ) )[1], '_' ) )[5] ) %>%
+				# left_join( ., data.frame( month = as.character(1:12), days = c(31,28.25,31,30,31,30,31,31,30,31,30,31) ) ) %>%
+				# left_join( ., bind_rows( data.frame( month = as.character( c( 6, 7, 8, 9, 10, 11 ) ), season = 'kharif' ), bind_rows( data.frame( month = as.character( c( 12, 1, 2, 3, 4, 5 ) ), season = 'rabi' ) ) ) ) %>%
+				# mutate( country = unlist( strsplit( as.character( PID ), '_') )[ seq( 1, 2*length( PID ), by = 2 ) ] ) %>% 
+				# mutate( value = value * days, units = 'km3' ) %>% 
+		# select( PID, country, climate_scenario, climate_model, type, units, year, season, month, value )
 	
-	} ) )
+	# } ) )
 	
-# Boxplot by kharif and rabi seasons for each country	
-df = wr.df %>% select( type, country, climate_scenario, climate_model, year, season, value ) %>% 
-	group_by( type, country, climate_scenario, climate_model, season, year ) %>% 
-	summarise( value = mean( value ) ) %>% as.data.frame() 
+# # Boxplot by kharif and rabi seasons for each country	
+# df = wr.df %>% select( type, country, climate_scenario, climate_model, year, season, value ) %>% 
+	# group_by( type, country, climate_scenario, climate_model, season, year ) %>% 
+	# summarise( value = mean( value ) ) %>% as.data.frame() 
 
-pdf( 'input/check/water_inflows.pdf', width = 6.5, height = 8.5 ) 
-p1 = layout( matrix( c(9,9,1,5,2,6,3,7,4,8),5,2,byrow=TRUE ), widths = c(0.3,0.3), heights= c(0.05,0.2,0.2,0.2,0.2) )
-par(mar=c(3,3,2,1),oma=c(0,0,0,0))
-for( tp in unique( wr.df$type ) )
-	{
-	for( cn in unique( wr.df$country ) )
-		{
-		df1 = df %>% filter( country == cn, type == tp ) %>% select( climate_scenario, season, value )
-		boxplot( 	value ~ climate_scenario + season, data = df1,
-					at = c(1,2,3, 4,5,6), boxlwd = 0.5, medlwd = 0.5,
-					col = c('deepskyblue','forestgreen','orange'),
-					names = c( '', unique( df1$season )[1], '', '', unique( df1$season )[2], '' ),
-					xaxs = FALSE, xaxt = 'n',main = bquote( .(cn) ~ ' - ' ~ .(tp) ~ ' [ ' ~ km^3 ~ ' ]' ) ) 
-		axis( side = 1, at = c(1,2,3, 4,5,6), labels = c( '', unique( df1$season )[1], '', '', unique( df1$season )[2], '' ), lwd.ticks=FALSE ) 			
-		abline(v=3.5)
-		}
-	}
-par(mar=c(0,0,0,0))
-plot.new()
-legend('center',legend = c( 'historical','rcp2.6','rcp6.0' ), fill = c('deepskyblue','forestgreen','orange'), ncol= 3, bty = 'n', cex = 1.2 )	
-dev.off()	
+# pdf( 'input/check/water_inflows.pdf', width = 6.5, height = 8.5 ) 
+# p1 = layout( matrix( c(9,9,1,5,2,6,3,7,4,8),5,2,byrow=TRUE ), widths = c(0.3,0.3), heights= c(0.05,0.2,0.2,0.2,0.2) )
+# par(mar=c(3,3,2,1),oma=c(0,0,0,0))
+# for( tp in unique( wr.df$type ) )
+	# {
+	# for( cn in unique( wr.df$country ) )
+		# {
+		# df1 = df %>% filter( country == cn, type == tp ) %>% select( climate_scenario, season, value )
+		# boxplot( 	value ~ climate_scenario + season, data = df1,
+					# at = c(1,2,3, 4,5,6), boxlwd = 0.5, medlwd = 0.5,
+					# col = c('deepskyblue','forestgreen','orange'),
+					# names = c( '', unique( df1$season )[1], '', '', unique( df1$season )[2], '' ),
+					# xaxs = FALSE, xaxt = 'n',main = bquote( .(cn) ~ ' - ' ~ .(tp) ~ ' [ ' ~ km^3 ~ ' ]' ) ) 
+		# axis( side = 1, at = c(1,2,3, 4,5,6), labels = c( '', unique( df1$season )[1], '', '', unique( df1$season )[2], '' ), lwd.ticks=FALSE ) 			
+		# abline(v=3.5)
+		# }
+	# }
+# par(mar=c(0,0,0,0))
+# plot.new()
+# legend('center',legend = c( 'historical','rcp2.6','rcp6.0' ), fill = c('deepskyblue','forestgreen','orange'), ncol= 3, bty = 'n', cex = 1.2 )	
+# dev.off()	

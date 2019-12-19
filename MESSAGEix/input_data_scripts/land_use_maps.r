@@ -4,6 +4,8 @@ require(rgeos)
 require(rgdal)
 require(raster)
 require(dplyr)
+require(tidyr)
+library(ggplot2)
 
 # Location of input data
 setwd( 'P:/is-wel/indus/message_indus' )
@@ -16,8 +18,6 @@ basin = 'Indus'
 
 #path with yield data, from GAEZ
 maps_path = paste0(getwd(),'/input/land_maps_crop_yields')
-
-crop_names = c('wheat','rice','cotton','fodder','sugarcane','pulses')
 
 #basin shape file
 basin.spdf = readOGR( paste( getwd(), 'input', sep = '/' ), paste( basin, 'bcu', sep = '_' ), verbose = FALSE )
@@ -66,11 +66,9 @@ land_av_agriculture.df = land_av_agriculture.sp@data %>%
   summarise(value = sum(value)/10^4) %>%  #from km2 to Mha
   mutate(units = 'Mha')
 
-write.csv(land_av_agriculture.df, paste0(getwd(),'/input/land_availability_map.csv'), row.names = F  )
-
 # crop use maps in terms of 1000 ha per pixel (in year 2000)
-crop_names = c('wheat','rice','cotton','fodder','sugarcane','pulses')
-out_df = NULL
+crop_names = c('wheat','rice','cotton','fodder','sugarcane','pulses','maize','fruit','vegetables')
+irr_land.df = NULL
 for (ii in seq_along(crop_names)){
   print(paste0(crop_names[ii ] ))
   crop_land_folder = list.dirs(path = maps_path)
@@ -90,13 +88,61 @@ for (ii in seq_along(crop_names)){
     group_by(node) %>% 
     summarise(value = sum(value )/10^6) %>% 
     mutate(crop = crop_names[ii]) %>% 
-    mutate(par = 'crop_land_2000') %>% 
+    mutate(par = 'crop_irr_land_2000') %>% 
     mutate(unit = 'Mha') %>% 
     mutate(time = 'year') %>% 
     select(crop,par,node,time,unit,value)
   
-  out_df = bind_rows(out_df,tmp_land.df)
+  irr_land.df = bind_rows(irr_land.df,tmp_land.df)
 }
+#rainfed land
+rainfed_land.df = NULL
+for (ii in seq_along(crop_names)){
+  print(paste0(crop_names[ii ] ))
+  crop_land_folder = list.dirs(path = maps_path)
+  crop_land_folder = (crop_land_folder[ grepl( paste0( '_r_', crop_names[ii]), crop_land_folder)])[1]
+  crop_land_file = list.files(path = crop_land_folder,pattern = '.tif')
+  
+  # 1000 ha
+  tmp_land.rs = raster(paste0(crop_land_folder,'/',crop_land_file) ) * 1000 #makes it in ha
+  
+  # for CWaTM
+  assign(paste0('land_ha_',crop_names[ii],'.rs'),tmp_land.rs)
+  
+  #process for MESSAGE, 
+  # historical capacity: crop to basin catchments and aggregate potential in Mha
+  tmp_land.sp = assign_pid_to_raster(tmp_land.rs)
+  tmp_land.df = tmp_land.sp@data %>% 
+    group_by(node) %>% 
+    summarise(value = sum(value )/10^6) %>% 
+    mutate(crop = crop_names[ii]) %>% 
+    mutate(par = 'crop_rainfed_land_2000') %>% 
+    mutate(unit = 'Mha') %>% 
+    mutate(time = 'year') %>% 
+    select(crop,par,node,time,unit,value)
+  
+  rainfed_land.df = bind_rows(rainfed_land.df,tmp_land.df)
+}
+
+# check sum or irr area for different crops vs total area for agriculture
+check_area = bind_rows(irr_land.df,rainfed_land.df) %>%  
+  group_by(node,par) %>% summarise(value = sum(value)) %>% ungroup() %>% 
+  tidyr::spread(par,value) %>% 
+  left_join(land_av_agriculture.df %>% select(-units) %>% 
+              rename( tot_land_av = value)) %>% 
+  mutate(diff = (tot_land_av - (crop_rainfed_land_2000 + crop_irr_land_2000)  )/tot_land_av *100 ) %>% 
+  mutate(tot_crop_area = crop_rainfed_land_2000 + crop_irr_land_2000) %>% 
+  select(node,diff,everything()) 
+# for four nodes the sum of irrigated land is higher than total land available 
+# the max difference is 16% in PAK_5
+ggplot(check_area %>% 
+         tidyr::gather('type','value',3:6))+
+  geom_point(aes(x = node, y = value, color = type))+
+  theme_bw()
+  
+check_rain_irr_ratio = check_area %>% select(node,crop_irr_land_2000,crop_rainfed_land_2000) %>% 
+  mutate(ratio = crop_irr_land_2000/crop_rainfed_land_2000,
+         perc_on_tot = crop_rainfed_land_2000/(crop_irr_land_2000 + crop_rainfed_land_2000)*100)
 
 national_trend.path = path.expand(paste0(maps_path,'/FAO_hist_national_prod'))
 nat_trend.files = list.files(path = national_trend.path,pattern = '.csv')
@@ -121,23 +167,55 @@ for (jj in seq_along(nat_trend.files)){
   perc_inc2015 = bind_rows(perc_inc2015,tmp_national)
 }
 
+perc_inc2015[ perc_inc2015$Area == 'Pakistan' & perc_inc2015$Item == 'Oranges',]$Item = 'Fruit, citrus nes'
+veg_to_aggregate = perc_inc2015 %>% 
+  filter(Item %in% c('Onions, dry', 'Potatoes')) %>% 
+  group_by(Area,Unit) %>% summarise(perc_inc = mean(perc_inc)) %>% ungroup() %>% 
+  mutate(Item = 'vegetables') %>% select(Area,Item,Unit,perc_inc)
+
+perc_inc2015 = perc_inc2015 %>% 
+  filter(!Item %in% c('Onions, dry', 'Potatoes')) %>% 
+  bind_rows(veg_to_aggregate)
+
 crop_item_map = data.frame(Item = unique(perc_inc2015$Item),
-                           crop = c('cotton', 'pulses', 'rice','sugarcane','wheat','fodder' ) )
+                           crop = c('cotton', 'pulses', 'rice','sugarcane','wheat','fodder','maize','fruit','vegetables' ) )
 country_map = data.frame(Area = unique(perc_inc2015$Area),
                          node2 = c('AFG', 'IND', 'PAK') )
 
 perc_inc2015 = perc_inc2015 %>% left_join(crop_item_map) %>% 
   left_join(country_map) %>% ungroup() %>% 
-  select(node2,crop,perc_inc) %>% unique()
+  select(node2,crop,perc_inc) %>% unique() %>% 
+  bind_rows(expand.grid(node2 = 'CHN',crop = crop_names, perc_inc = 0) )
 
-out_df = out_df %>% 
+out_df = bind_rows(irr_land.df,rainfed_land.df) %>% 
   mutate(node2 = gsub('_.*','',node) ) %>% 
   left_join(perc_inc2015) %>% 
   mutate(value = if_else(value == 0,0 ,value + (value* perc_inc)) ) %>% 
-  mutate(par = 'crop_land_2015') %>% 
+  mutate(par = if_else(grepl('2000',par), gsub('2000','2015',par), par)) %>% 
   select(crop,par,node,time,unit,value)
 
-existing_csv = read.csv(paste0(getwd(), '/input/crop_input_data.csv'))
+# check after 2015 upscaling
+check_area2 = out_df %>%  
+  group_by(node,par) %>% summarise(value = sum(value)) %>% ungroup() %>% 
+  tidyr::spread(par,value) %>% 
+  left_join(land_av_agriculture.df %>% select(-units) %>% 
+              rename( tot_land_av = value)) %>% 
+  mutate(diff = (tot_land_av - (crop_rainfed_land_2015 + crop_irr_land_2015)  )/tot_land_av *100 ) %>% 
+  mutate(tot_crop_area = crop_rainfed_land_2015 + crop_irr_land_2015) %>% 
+  select(node,diff,everything())
+
+#write available land for agriculture, use tot available land 2000 when it is greater than the sum of rainfed+irr land in 2015
+# otherwise use rainfed + irr land 2015
+land_av_agriculture.df = check_area2 %>% 
+  group_by(node) %>% 
+  mutate(value = max(tot_land_av,tot_crop_area),
+         units = 'Mha') %>% ungroup() %>% 
+  select(node,value,units)
+
+write.csv(land_av_agriculture.df, paste0(getwd(),'/input/land_availability_map.csv'), row.names = F  )
+
+existing_csv = read.csv(paste0(getwd(), '/input/crop_input_data.csv')) %>% 
+  filter(unit != 'Mha')
 to_csv = bind_rows(existing_csv, out_df)
 write.csv(to_csv, paste0(getwd(), '/input/crop_input_data.csv'), row.names = F )
 

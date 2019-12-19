@@ -16,7 +16,7 @@ $LOAD type_tec, cat_tec, type_year, cat_year, type_emission, cat_emission
 $LOAD inv_tec
 $LOAD balance_equality
 $LOAD shares
-$LOAD crop_growing_time, crop_gro_first_time
+$LOAD full_balance
 $GDXIN
 
 Execute_load '%in%'
@@ -37,7 +37,7 @@ is_dynamic_activity_lo, initial_activity_lo, growth_activity_lo,
 * parameters for reliability, flexibility and renewable potential constraints
 rating_bin, reliability_factor, peak_load_factor,
 * share constraints
-map_shares_commodity_share,map_shares_commodity_total,share_commodity_lo,share_commodity_up
+map_shares_commodity_share,map_shares_commodity_total,share_commodity_lo 
 * emission factors, bounds and taxes on emissions (including mapping sets)
 historical_emission, emission_factor, emission_scaling, is_bound_emission, bound_emission, tax_emission,
 * historical values of new capacity investment, activity and extraction

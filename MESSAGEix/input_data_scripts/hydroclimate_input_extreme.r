@@ -83,14 +83,19 @@ runoff.list = lapply( climate_scenarios, function( rcp ){
 						
 						}
 					
-					return( mean( nc.stack[[ c( paste( 'X', seq( ystart,yend,by=1 ),'.', mmm, sep = '' ) ) ]] ) )
+					
+					return( calc( nc.stack[[ c( paste( 'X', seq( ystart,yend,by=1 ),'.', mmm, sep = '' ) ) ]], fun = function(x){ quantile( x, probs = 0.1, na.rm =TRUE ) } ) )
 					
 					} ) ) } ) )  
 				
 				}else
 				{
 				
-				nc_decadal.stack = do.call( stack, lapply( c(2010,2020,2030,2040,2050,2060), function( iii ){ do.call( stack, lapply( 1:12, function( mmm ){ mean( nc.stack[[ c( paste( 'X', seq( as.numeric( unlist( strsplit( as.character( as.Date("1901-01-01") + min( ncvar_get(nc, "time") )/12*365.25 ), '-' ) )[1] ),as.numeric( unlist( strsplit( as.character( as.Date("1901-01-01") + max( ncvar_get(nc, "time") )/12*365.25 ), '-' ) )[1] ),by=1 ),'.', mmm, sep = '' ) ) ]] ) } ) ) } ) )  
+				nc_decadal.stack = do.call( stack, lapply( c(2010,2020,2030,2040,2050,2060), function( iii ){ 
+					do.call( stack, lapply( 1:12, function( mmm ){ 
+						calc( nc.stack[[ c( paste( 'X', seq( as.numeric( unlist( strsplit( as.character( as.Date("1901-01-01") + min( ncvar_get(nc, "time") )/12*365.25 ), '-' ) )[1] ),as.numeric( unlist( strsplit( as.character( as.Date("1901-01-01") + max( ncvar_get(nc, "time") )/12*365.25 ), '-' ) )[1] ),by=1 ),'.', mmm, sep = '' ) ) ]], fun = function(x){ quantile( x, probs = 0.1, na.rm =TRUE ) } ) 
+						} ) ) 
+					} ) )  
 				
 				}
 			
@@ -125,7 +130,7 @@ for( rcp in climate_scenarios )
 	}
 	
 # Output harmonized data to file for use in crop model
-for( i in names( runoff.list ) ){ for( j in names( runoff.list[[ 1 ]] ) ){ if( !is.null( runoff.list[[ i ]][[ j ]] ) ){ writeRaster( runoff.list[[ i ]][[ j ]], paste0( 'input/hydroclimate_input/runoff_metersperday_', j, '_', i, '.tif' ), format = 'GTiff', overwrite = TRUE ) } } }		
+for( i in names( runoff.list ) ){ for( j in names( runoff.list[[ 1 ]] ) ){ if( !is.null( runoff.list[[ i ]][[ j ]] ) ){ writeRaster( runoff.list[[ i ]][[ j ]], paste0( 'input/hydroclimate_input/extremerunoff_metersperday_', j, '_', i, '.tif' ), format = 'GTiff', overwrite = TRUE ) } } }		
 	
 toc()	
 

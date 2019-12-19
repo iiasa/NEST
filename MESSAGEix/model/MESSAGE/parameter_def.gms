@@ -64,6 +64,8 @@ Parameters
     duration_time_rel(time,time2)  relative duration of subannual time period ('time2' relative to parent 'time')
     interestrate(year_all)         interest rate (to compute discount factor)
     discountfactor(*)              cumulative discount facor
+    df_period(year_all)            cumulative discount factor
+    df_year(year_all)              cumulative discount factor
 ;
 
 ***
@@ -509,7 +511,7 @@ Parameters
 ***
 
 Parameters
-*    share_commodity_up(shares,node,year_all,time)    upper bound of commodity share constraint
+    share_commodity_up(shares,node,year_all,time)    upper bound of commodity share constraint
     share_commodity_lo(shares,node,year_all,time)    lower bound of commodity share constraint
 *    share_mode_up(shares,node,tec,mode,year_all,time)    upper bound of mode share constraint
 *    share_mode_lo(shares,node,tec,mode,year_all,time)    lower bound of mode share constraint

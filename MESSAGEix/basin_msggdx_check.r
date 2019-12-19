@@ -2,7 +2,7 @@
 library(ggplot2)
 #####
 # check total runoff
-runoff_by_admin.df = inflow.df %>% 
+runoff_by_admin.df = demand.par %>% filter(level == 'inflow') %>% mutate(time = as.numeric(time)) %>% 
   left_join( ., data.frame( time = seq(1:12), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
   left_join( ., data.frame( node = node, country = unlist( strsplit( node, '_' ) )[ seq( 1, 2*length(node), by = 2 ) ] ) ) %>%
   group_by(year_all, time, country) %>% summarise( value = sum( abs( value * days )/1e3 ) ) %>%
@@ -25,6 +25,37 @@ plot.new()
 legend( 'left', legend = c(2015,seq(2020,2060,by=10) ), title = 'Decade', bty = 'n', cex = 1.2, seg.len = 3, col = c('black','cyan','blue','purple','brown','red'), lty = 1 )	
 dev.off()
 ###
+runoff_by_admin_Yavg.df = inflow.df %>% 
+  left_join( ., data.frame( time = seq(1:12), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
+  group_by(year_all, time, node) %>% summarise( value = sum( abs( value * days )/1e3 ) ) %>%
+  ungroup() %>% data.frame() %>% 
+  mutate(type = 'internal runoff') 
+
+tot_runoff1 = runoff_by_admin.df %>% ungroup() %>% group_by(year_all,country) %>% summarise(value= sum(value) )
+tot_runoff2 = runoff_by_admin_Yavg.df %>% group_by(year_all) %>% summarise(value= sum(value) )
+
+# Compare with Natural flow
+natural_flow_Yavg.df = environmental_flow.df %>% 
+  left_join( data.frame( time = seq(1:12), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>% 
+  mutate(country = gsub('_.*','',node)) %>% 
+  group_by(year_all,time, node) %>% summarise(value = sum(value * days)/1e3) %>% ungroup() %>% 
+  mutate(type = 'natual flow')
+
+# also look at exogenous aquifer recharge 
+recharge_Yavg.df = recharge.df %>% 
+  left_join( data.frame( time = seq(1:12), days = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>% 
+  mutate(country = gsub('_.*','',node)) %>% 
+  group_by(year_all,time, node) %>% summarise(value = sum(abs(value * days))/1e3) %>% ungroup() %>% 
+  mutate(type = 'aquifer recharge')
+
+to_plot = rbind(runoff_by_admin_Yavg.df,natural_flow_Yavg.df,recharge_Yavg.df)
+pdf( 'input/check/runoff_nat-flow_recharge.pdf', width = 10, height = 10 )
+ggplot(to_plot,aes(x = time, y = value, group = interaction(year_all,type),color = type)) +
+  geom_line(size = 0.1)+
+  facet_wrap(~node)+
+  theme_bw()+ylab('cubic kilometers')+xlab('months')+
+  theme(legend.position = 'bottom')
+dev.off()
 
 ###
 # Check municipal and manufacturing water demands
@@ -94,7 +125,28 @@ plot.new()
 legend( 'left', legend = c(2015,seq(2020,2060,by=10) ), title = 'Decade', bty = 'n', cex = 1.2, seg.len = 3, col = c('black','cyan','blue','purple','brown','red'), lty = 1 )	
 dev.off()	
 
-###
+## widthdrawals mcm/day
+hist_withdrawals.df = read.csv( "input/historical_new_cap.csv", stringsAsFactors=FALSE ) %>% 
+  filter(grepl('sw_diversion|gw_diversion',tec)) %>% filter(year_all == 2015) %>% 
+  # mutate(type = gsub('_.*','',tec)) %>% 
+  group_by(year_all,tec) %>% summarise(value = sum(value)) %>% ungroup() %>% 
+  mutate(value = value *365/1e3) # in km3
+
+hist_withdrawals_agg = hist_withdrawals.df 
+  group_by(year_all) %>% summarise(value = sum(value)) %>% ungroup()
+ 
+hist_annual_inflow = runoff_by_admin.df %>% filter( country == 'Indus') %>% 
+  group_by(year_all) %>% summarise(value = sum(value)) %>% ungroup()
+
+ggplot()+
+  geom_bar(data = (hist_annual_inflow %>% filter(year_all == 2015) ),aes(x = year_all,y = value),
+           stat = 'identity',width = 0.5, position = position_nudge(x = -0.5))+
+  geom_bar(data = (hist_withdrawals_agg %>% filter(year_all == 2015) ),aes(x = year_all,y = value, fill = type),
+           stat = 'identity',width = 0.5, position = position_nudge(x = 0.5))+
+  scale_x_continuous(breaks = c(2015))+
+  theme_bw()+ylab('km3')+xlab('Year')
+
+ ###
 # Check crop yield demand
 yield_by_admin.df0 = demand.df %>% 
   filter( level == 'raw' ) %>% 
@@ -112,8 +164,9 @@ ggplot()+
   facet_wrap(~country)+
   ggtitle('Yield demand')+ylab('Mton product demand')+
   theme_bw()
-pdf( 'input/check/yield_demand.pdf', width = 7, height = 6 ) 
-cols = data.frame( row.names = c('cotton', 'fodder', 'pulses', 'rice', 'sugarcane', 'wheat', 'all'), col = c('green', 'blue','purple','brown','orange', 'tan', 'black'))
+pdf( 'input/check/yield_demand.pdf', width = 7, height = 5 ) 
+cols = data.frame( row.names = c('cotton', 'fodder', ' fruit', 'pulses','maize', 'rice', 'sugarcane','vegetables', 'wheat'), 
+                   col = c("#1b9e77", "#d95f02",'#b1b1b1', "#7570b3","#25bad9","#e7298a", "#66a61e",'#005ad1', '#e6ab02'))
 p1 = layout( matrix( c(1,2,3,4,5,6), 2,3, byrow=TRUE ), widths=c(0.24,0.24,0.24), heights=c(0.4,0.4) )
 par( mar=c(4,4,3,3), oma = c(1,1,1,1) )
 for( ccc in unique( yield_by_admin.df$country ) ){
@@ -122,12 +175,83 @@ for( ccc in unique( yield_by_admin.df$country ) ){
     select( year_all, commodity, value ) %>%
     mutate( value = value / 1e3 ) %>%
     reshape( ., idvar = 'commodity', timevar = 'year_all', direction = 'wide' ) 
-  barplot( as.matrix( df %>% select( -commodity ) ), ylab = 'million tons', names.arg = c(2015, seq(2020, 2060, by = 10) ), las = 2, main = paste0( ccc, ' - Yield' ), col = as.character(cols[ df$commodity, ]) )
+  barplot( as.matrix( df %>% select( -commodity ) ), ylab = 'million tons', names.arg = c(2015, seq(2020, 2060, by = 10) ), las = 2, main = paste0( ccc ), col = as.character(cols[ df$commodity, ]) )
   abline( h = 0 )
 }
 plot.new()
 legend( 'left', legend = row.names(cols), title = 'Crop', bty = 'n', cex = 1.25, fill = as.character(unlist(cols)) )	
 dev.off()
+
+## energy exogeneous demand
+en_demand0 = demand.df %>% filter(commodity == 'electricity') %>% 
+  mutate(level = gsub('_.*','',level) ) %>% 
+  mutate(country = gsub('_.*','',node) ) %>% 
+  mutate(value = (value * 30 *24* 1e-6)) %>%  # TWh
+  group_by(level,year_all,country) %>% 
+  summarise(value = sum (value)) %>% 
+  ungroup() %>% 
+  select(country, level, year_all, value) 
+
+en_demand = rbind( en_demand0, en_demand0 %>% 
+                             group_by( level, year_all ) %>% 
+                             summarise( value = sum( value ) ) %>% 
+                             ungroup() %>% 
+                             mutate( country = 'Indus' )) %>% 
+                             select(country, level, year_all, value) %>% 
+  as.data.frame()
+
+en_final_col = data.frame( row.names = c("industry","rural","urban"),
+                           col = c( "#FF7F00",  "#4DAF4A", "#A65628" ))
+pdf( 'input/check/ex_energy_demand.pdf', width = 7, height = 5 ) 
+p1 = layout( matrix( c(1,2,3,4,5,6), 2,3, byrow=TRUE ), widths=c(0.24,0.24,0.24), heights=c(0.4,0.4) )
+par( mar=c(4,4,3,3), oma = c(1,1,1,1) )
+for( ccc in unique( en_demand$country ) ){
+  df = en_demand %>% filter( country == ccc ) %>%
+    filter( year_all %in% c(2015, seq(2020, 2060, by = 10) ) ) %>%
+    select( year_all, level, value ) %>%
+    reshape( ., idvar = 'level', timevar = 'year_all', direction = 'wide' ) 
+  barplot( as.matrix( df %>% select( -level ) ), ylab = 'TWh', names.arg = c(2015, seq(2020, 2060, by = 10) ), las = 2, main = paste0( ccc ), col = as.character(en_final_col[ df$level, ]) )
+  abline( h = 0 )
+}
+plot.new()
+legend( 'left', legend = row.names(en_final_col), title = 'sector', bty = 'n', cex = 1.25, fill = as.character(unlist(en_final_col)) )	
+dev.off()
+
+#water
+wat_demand0 = demand.df %>% filter(commodity == 'freshwater',level != 'inflow') %>% 
+  mutate(level = gsub('_.*','',level) ) %>% 
+  mutate(country = gsub('_.*','',node) ) %>% 
+  mutate(value = (value * 30 * 1e-3)) %>%  # km3/year
+  group_by(level,year_all,country) %>% 
+  summarise(value = sum (value)) %>% 
+  ungroup() %>% filter(country != 'CHN') %>% 
+  select(country, level, year_all, value) 
+
+wat_demand = rbind( wat_demand0, wat_demand0 %>% 
+                     group_by( level, year_all ) %>% 
+                     summarise( value = sum( value ) ) %>% 
+                     ungroup() %>% 
+                     mutate( country = 'Indus' )) %>% 
+  select(country, level, year_all, value) %>% 
+  as.data.frame()
+
+en_final_col = data.frame( row.names = c("industry","rural","urban"),
+                           col = c( "#FF7F00",  "#4DAF4A", "#A65628" ))
+pdf( 'input/check/ex_wat_demand.pdf', width = 7, height = 5 ) 
+p1 = layout( matrix( c(1,2,3,4,5,6), 2,3, byrow=TRUE ), widths=c(0.24,0.24,0.24), heights=c(0.4,0.4) )
+par( mar=c(4,4,3,3), oma = c(1,1,1,1) )
+for( ccc in unique( wat_demand$country ) ){
+  df = wat_demand %>% filter( country == ccc ) %>%
+    filter( year_all %in% c(2015, seq(2020, 2060, by = 10) ) ) %>%
+    select( year_all, level, value ) %>%
+    reshape( ., idvar = 'level', timevar = 'year_all', direction = 'wide' ) 
+  barplot( as.matrix( df %>% select( -level ) ), ylab = 'km3', names.arg = c(2015, seq(2020, 2060, by = 10) ), las = 1, main = paste0( ccc ), col = as.character(en_final_col[ df$level, ]) )
+  abline( h = 0 )
+}
+plot.new()
+legend( 'left', legend = row.names(en_final_col), title = 'sector', bty = 'n', cex = 1.25, fill = as.character(unlist(en_final_col)) )	
+dev.off()
+
 ###
 
 #### check water supply>demand in 2015
@@ -228,11 +352,14 @@ for (jj in seq_along(nat_trend.files)){
     filter(Unit == 'tonnes', Year <= 2015 ) %>% 
     mutate(Value = Value * 1E-6, Unit = 'mton') %>% 
     left_join(data.frame(Area = c('Pakistan','Afghanistan','India'),country = c('PAK','AFG','IND'))) %>% 
-    left_join(data.frame(Item = c("Seed cotton","Sorghum", "Pulses, nes", "Rice, paddy", "Sugar cane" , "Wheat" ),crop = crop_names)) %>% 
+    left_join(data.frame(Item = c("Seed cotton","Sorghum",'Oranges','Fruit, citrus nes', "Maize" , "Pulses, nes" ,  "Rice, paddy", "Sugar cane" ,'Onions, dry','Potatoes', "Wheat" ),
+                         crop = c('cotton', 'fodder',      'fruit', 'fruit',          'maize','pulses',       'rice',      'sugarcane',     'vegetables','vegetables','wheat' ))) %>% 
     select(country,crop,Year,Unit,Value) %>% 
     rename(year_all = Year, unit = Unit, value = Value)
   prod_hist = bind_rows(prod_hist,tmp_national)
 }
+prod_hist = prod_hist %>% group_by(country,crop,year_all,unit) %>% summarise(value = sum(value)) %>% ungroup()
+
 yield_by_admin.df2 = yield_by_admin.df %>% mutate(unit = 'Mton') %>% filter(!country == 'Indus') %>% rename(crop = commodity) %>% 
   select(country,crop,year_all,unit,value) %>% mutate(value = value/1000)
   # rbind(prod_hist) %>% 
@@ -306,7 +433,7 @@ grid.arrange(p1,p2,nrow = 2)
 
 ## storage
 
-level_dams = read_csv("P:/is-wel/indus/message_indus/input/storage/wapda_indus_reservoir_levels.csv")
+level_dams = read.csv("P:/is-wel/indus/message_indus/input/storage/wapda_indus_reservoir_levels.csv")
 
 # from GRanD_Technical_Documentation_v1_1, V[Mm3] = 0.678 * ( A[km2] * h[m] )^0.9229
 # maximum volumes from WAPDA

@@ -25,10 +25,10 @@ proj4string(buff.sp) = proj4string(basin.spdf)
 proj4string(buff2.sp) = proj4string(basin.spdf)
 		
 # Country region mapping key
-country_region_map_key.df = data.frame( read.csv('P:/ene.general/Water/global_basin_modeling/basin_delineation/country_region_map_key.csv', stringsAsFactors=FALSE) )
+country_region_map_key.df = data.frame( read.csv('input/country_region_map_key.csv', stringsAsFactors=FALSE) )
 
 # historical connection rates
-ww.df = data.frame(read.csv('P:/ene.general/Water/global_basin_modeling/wastewater/wastewater_Baum_2013/sewerage_connection_and_treatment.csv', header=TRUE, sep=',', stringsAsFactors=F, as.is=T))
+ww.df = data.frame(read.csv('input/sewerage_connection_and_treatment.csv', header=TRUE, sep=',', stringsAsFactors=F, as.is=T))
 ww.df$country_id = as.character(countrycode(ww.df$country, 'country.name', 'iso3c'))
 
 # Existing urban wastewater treatment
@@ -59,7 +59,7 @@ for( case in c( 'base', 'sdg' ) )
 			if(ss==2){rr=2}
 			if(ss==5){rr=4}
 			if(yy[y]==2015){yy2=2010}else{yy2=yy[y]}
-			dat.df = data.frame( readRDS( paste('P:/ene.general/Water/ssp_water_demand_projections/harmonized_rcp_ssp_data/water_use_ssp',ss,'_rcp',rr,'_',yy2,'_data.Rda',sep='') ) )
+			dat.df = data.frame( readRDS( paste('input/harmonized_rcp_ssp_data/water_use_ssp',ss,'_rcp',rr,'_',yy2,'_data.Rda',sep='') ) )
 			names(dat.df)[which(names(dat.df) == paste('xloc',yy2,sep='.'))] = 'xloc'
 			names(dat.df)[which(names(dat.df) == paste('yloc',yy2,sep='.'))] = 'yloc'
 			names(dat.df)[which(names(dat.df) == paste('urban_pop',yy2,sep='.'))] = 'urban_pop'
@@ -228,33 +228,29 @@ for( case in c( 'base', 'sdg' ) )
 		ucon.df = 	res_pid.df %>% 
 					filter( year_all == 2015 ) %>%
 					filter( scenario == 'SSP2' ) %>%
-					select( node, urban_connection_rate )
+					dplyr::select( node, urban_connection_rate )
 		utrt.df = 	res_pid.df %>% 
 					filter( year_all == 2015 ) %>%
 					filter( scenario == 'SSP2' ) %>%
-					select( node, urban_treated_rate )			
+					dplyr::select( node, urban_treated_rate )			
 		rcon.df = 	res_pid.df %>% 
 					filter( year_all == 2015 ) %>%
 					filter( scenario == 'SSP2' ) %>%
-					select( node, rural_connection_rate )	
+					dplyr::select( node, rural_connection_rate )	
 		rtrt.df = 	res_pid.df %>% 
 					filter( year_all == 2015 ) %>%
 					filter( scenario == 'SSP2' ) %>%
-					select( node, rural_treated_rate )			
+					dplyr::select( node, rural_treated_rate )			
 	
-	
-	
-		
 		# Demands
 		demand.df = read.csv( "input/indus_demands.csv", stringsAsFactors=FALSE )
+		
 		# Just keep the current SSP and add level and commodity to match core GAMS model
 		demand.df = demand.df[ which( demand.df$scenario == 'SSP2' ), c( which( names( demand.df ) != 'scenario' ) ) ]
 		demand.df$commodity = NA
 		demand.df$commodity[ which( demand.df$type %in% c('withdrawal','return') ) ] = 'freshwater'
 		demand.df$commodity[ which( demand.df$type %in% c('electricity') ) ] = 'electricity'
 		demand.df$level = NA
-		demand.df$level[ which(  demand.df$type %in% c('withdrawal') & demand.df$sector == 'irrigation' ) ] = 'irrigation_field'
-		demand.df$level[ which(  demand.df$type %in% c('electricity') & demand.df$sector == 'irrigation' ) ] = 'irrigation_final'
 		demand.df$level[ which(  demand.df$type %in% c('withdrawal','electricity') & demand.df$sector == c('urban') ) ] = 'urban_final'
 		demand.df$level[ which(  demand.df$type %in% c('withdrawal','electricity') & demand.df$sector == c('industry') ) ] = 'industry_final'
 		demand.df$level[ which(  demand.df$type %in% c('withdrawal','electricity') & demand.df$sector == 'rural' )  ] = 'rural_final'
@@ -271,14 +267,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('urban_final')) %>% 
 			left_join(ucon.df,by = c("node")) %>% 
 			mutate(value = value0 * urban_connection_rate) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'urban_piped_distribution') %>%   
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units )
+			dplyr::select( node, tec, year_all, value, units )
 		  
 		urban_unconnected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -286,14 +282,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('urban_final')) %>% 
 			left_join(ucon.df,by = c("node")) %>% 
 			mutate(value = value0 * (1-urban_connection_rate)) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'urban_unimproved_distribution') %>%   
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units )
+			dplyr::select( node, tec, year_all, value, units )
 		  
 		urban_collected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -302,14 +298,14 @@ for( case in c( 'base', 'sdg' ) )
 			left_join(ucon.df,by = c("node")) %>% 
 			mutate(value = value0 * urban_connection_rate) %>% 
 			mutate(tec = 'urban_piped_collection') %>%  
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'urban_piped_collection') %>%  
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units )
+			dplyr::select( node, tec, year_all, value, units )
 
 		urban_uncollected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -317,14 +313,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('urban_waste')) %>% 
 			left_join(ucon.df,by = c("node")) %>% 
 			mutate(value = value0 * (1-urban_connection_rate)) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'urban_wastewater_release') %>%
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units )   
+			dplyr::select( node, tec, year_all, value, units )   
 		  
 		urban_treated.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -332,14 +328,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('urban_waste')) %>% 
 			left_join(utrt.df,by = c("node")) %>% 
 			mutate(value = value0 * urban_treated_rate ) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'urban_wastewater_treatment') %>%
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units )   
+			dplyr::select( node, tec, year_all, value, units )   
 
 		rural_connected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -347,14 +343,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('rural_final')) %>% 
 			left_join(rcon.df,by = c("node")) %>% 
 			mutate(value = value0 * rural_connection_rate) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'rural_piped_distribution') %>% 
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units ) 
+			dplyr::select( node, tec, year_all, value, units ) 
 				
 		rural_unconnected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -362,14 +358,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('rural_final')) %>% 
 			left_join(rcon.df,by = c("node")) %>% 
 			mutate(value = value0 * (1-rural_connection_rate)) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'rural_unimproved_distribution') %>%
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units ) 
+			dplyr::select( node, tec, year_all, value, units ) 
 			
 		rural_collected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -377,14 +373,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('rural_waste')) %>% 
 			left_join(rcon.df,by = c("node")) %>% 
 			mutate(value = value0 * rural_connection_rate) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'rural_piped_collection') %>% 
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units ) 
+			dplyr::select( node, tec, year_all, value, units ) 
 
 		rural_uncollected.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -392,14 +388,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('rural_waste')) %>% 
 			left_join(rcon.df,by = c("node")) %>% 
 			mutate(value = value0 * (1-rural_connection_rate)) %>% 
-			select(node,year_all,time,value) %>%
+			dplyr::select(node,year_all,time,value) %>%
 			group_by(node) %>%
 			summarise( value =  round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'rural_wastewater_release') %>% 
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units ) 
+			dplyr::select( node, tec, year_all, value, units ) 
 		  
 		rural_treated.df = demand.df %>% 
 			filter(year_all == 2015) %>% 
@@ -407,14 +403,14 @@ for( case in c( 'base', 'sdg' ) )
 			filter(level %in% c('rural_waste')) %>% 
 			left_join(rtrt.df,by = c("node")) %>% 
 			mutate(value = value0 * rural_treated_rate ) %>% 
-			select(node,time,value) %>%
+			dplyr::select(node,time,value) %>%
 			group_by(node) %>%
 			summarise( value = round( max( value ) / 1e6, digits = 2 ) ) %>%
 			mutate(units = 'mcm_per_day') %>%
 			mutate(tec = 'rural_wastewater_treatment') %>% 
 			mutate(year_all = 2015) %>% 
 			data.frame() %>% 
-			select( node, tec, year_all, value, units )
+			dplyr::select( node, tec, year_all, value, units )
 			
 						 
 		### Write to csv	

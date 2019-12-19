@@ -238,6 +238,9 @@ Sets
     type_emission                           types of emission aggregations
     cat_emission(type_emission,emission)    mapping of emissions to respective categories
     full_balance(commodity)                 for full commodity balance
+    balance_equality(commodity,level)       mapping of commodities-level where the supply-demand balance must be maintained with equality
+    crop_growing_time(tec,time)             mapping crops and their growing periods
+    crop_gro_first_time(tec,time)
 ;
 
 Alias(type_tec,type_tec_share);

@@ -1,5 +1,7 @@
 
 
+# source( paste( Sys.getenv("INDUS_IX_PATH"), 'input_data_scripts/powerplants_historical_capacity.r', sep = '/' ) )
+
 library(raster)
 library(rgdal)
 library(rgeos)
@@ -9,7 +11,14 @@ library(tidyverse)
 # ISWEL folder for data
 setwd('P:/is-wel/indus/message_indus')
 
+basin = 'Indus'
 
+# Indus delineatiion
+basin.spdf = readOGR( paste( getwd(), 'input', sep = '/' ), paste( basin, 'bcu', sep = '_' ), verbose = FALSE )
+basin.sp = gUnaryUnion( basin.spdf )
+basin.sp = SpatialPolygons(list(Polygons(Filter(function(f){f@ringDir==1},basin.sp@polygons[[1]]@Polygons),ID=1)))
+proj4string( basin.sp ) = proj4string( basin.spdf )	
+	
 # Existing power generation capacity
 # Read in Raptis et al and Carma data and merge
 
@@ -24,7 +33,7 @@ fuel_map.df = data.frame(	wepp = c('WAT','UR','GAS','CSGAS','BAG','BL','Oil','TG
                           final = c('Hydro','Nuclear','Gas','Gas','Biomass','Biomass','Biomass','Oil','Gas','Gas','Gas','Gas','Gas','Gas','Oil','Coal','Coal','Biomass','Gas','Geothermal','Oil','Gas','Gas','Gas','Gas','Gas','Gas','Gas','Gas','Gas','Gas','Biomass','Biomass','Biomass','Oil','Gas','Solar','Oil','Oil','Wind','Biogas','Biomass','Gas','Biomass','Oil','Wsth') )
 
 # Load the geocoded WEPP database and rename some of the categories
-ppl.df = data.frame(read.csv('input/IIASAPP_v3.6/geocoded/IIASAPP_geo2018-03-08.csv',stringsAsFactors=FALSE))
+ppl.df = data.frame(read.csv('input/powerplants/IIASAPP_v3.6/geocoded/IIASAPP_geo2018-03-08.csv',stringsAsFactors=FALSE))
 ppl.df = ppl.df[, c("latM", "lonM", "UNIT", "PLANT", "STATUS",  "YEAR" , "MW_x" , "UTYPE_x" , "FUEL_x", "COOL_complete")] 
 names( ppl.df ) = c("LAT" , "LON", "UNIT", "PLANT", "STATUS",  "YEAR" , "MW" , "UTYPE" , "FUEL", "COOL")
 
@@ -36,196 +45,299 @@ ppl.df <- ppl.df %>%
 
 # Rename fuel types and remove NA types
 ppl.df$FUEL = fuel_map.df$final[ match( ppl.df$FUEL, as.character(fuel_map.df$wepp) ) ]
-ppl.df = ppl.df[ which(!is.na(ppl.df$FUEL)) , ]
 
-# Remove retired plants
-ppl.df = ppl.df[ -1 * which( ppl.df$STATUS == 'RET' ) , ]
+# Remove retired plants and plants without location or fuel types
+ppl.df = ppl.df %>% filter( STATUS %in% c('OPR','PLN','CON','DEC','DEL','UNK'), !is.na(LAT), !is.na(FUEL) ) %>%
+	mutate( MW = as.numeric( as.character( MW ) ) )
 
-# carma.df = data.frame(read.csv('P:/ene.general/Water/global_basin_modeling/powerplants/carma.csv',stringsAsFactors=FALSE))
-# carma_red.df = carma.df[-1*c(which(as.character(carma.df$locationid) %in% as.character(ppl.df$LOCATIONID))),]
-# carma_red.df = carma_red.df[-1*c(which(is.na(carma_red.df$latitude))),]
-# carma_red.df = carma_red.df[-1*c(which(as.character(carma_red.df$pmover) %in% c('HY','ST','CC'))),]
-# carma_red.df = carma_red.df[-1*c(which(is.na(carma_red.df$pmover))),]
-# carma_red.df = carma_red.df[-1*c(which(is.na(carma_red.df$dfuel))),]
-# 
-# mp1 = data.frame(carma = as.character(c('NG','SUN','FLIQ','KER','WIND','BGAS','BLIQ','FGAS','BSOL','JET','WSTH')), raptis =as.character( c('Gas','Solar','Oil','Oil','Wind','Biogas','Biomass','Gas','Biomass','Oil','Wsth')),stringsAsFactors=FALSE)
-# carma_red.df <- carma_red.df %>% 
-#   left_join(mp1, by = c("dfuel" = "carma")) %>% 
-#   dplyr::select(-dfuel) %>% 
-#   rename(dfuel = raptis)
-# # carma_red.df$dfuel = unlist( lapply( 1:length(carma_red.df$dfuel), function(x){ if(length(which(as.character(carma_red.df$dfuel[x]) %in% mp1$carma))>0){return( as.character( mp1$raptis[which(mp1$carma == as.character(carma_red.df$dfuel[x]))]) ) }else{return(NA)} } ) )
-# carma_red.df = carma_red.df[-1*c(which(is.na(carma_red.df$dfuel))),]
-# carma_red.df = carma_red.df[-1*c(which(carma_red.df$pmover == 'OT')),]
-# ppl.df = ppl.df[-1*c(which(as.character( ppl.df$FUEL ) == 'Unknown')),]
-# ppl.df$FUEL[which(ppl.df$FUEL == 'Biofuel')] = 'Biomass'
-# ppl.df$COOL[which(as.character( ppl.df$COOL ) == 'N/A')] = NA
-
-# carma_red.df2 <- carma_red.df %>% 
-#   mutate(UNIT = NA) %>% 
-#   mutate(YEAR = 2010 - round(as.numeric(age.max))) %>% 
-#   mutate(COOL = NA) %>% 
-#   dplyr::select(locationid,latitude,longitude,UNIT,plant,YEAR,mw_2009,dfuel,pmover,COOL)
-# names(carma_red.df2) = names(ppl.df)
-# pplt.df <- ppl.df %>% bind_rows(carma_red.df2)
-
-# pplt.df = pplt.df[-1*c(which( as.character(pplt.df$FUEL) == 'Wsth')),]																					
-# pplt.df$UTYPE = unlist( lapply( 1:nrow(pplt.df), function(x){ unlist(strsplit(pplt.df$UTYPE[x],'/'))[1] } ) )
-# pplt.df$UTYPE[pplt.df$UTYPE=='CCSS'] = 'CC'																					
-# pplt.df$YEAR[which(is.na(pplt.df$YEAR))] = 2000
 # Combined unit and fuel types
 ppl.df$TPS = paste( ppl.df$FUEL, ppl.df$UTYPE, sep= '.' )
 ppl.df$TPS = map_unit.df$tps2[ match( ppl.df$TPS, as.character(map_unit.df$tps1) ) ]
-
-
-ppl.df <- ppl.df %>% 
+ppl.df = ppl.df %>% 
   mutate(TPS = paste(TPS,COOL,sep = '_')) %>% 
   mutate(TPS = gsub("_NA.*","",TPS))
 
+# Pakistan shapefile
+pakistan.spdf<-getData("GADM", country="PAK", level=0)
+# Make spatial and crop to basin extent	
+ppl.spdf = ppl.df %>% rename( x = LON, y = LAT )
+coordinates(ppl.spdf) = ~x+y 
 
-#pplt.df$tps_utype = unlist( lapply( 1:nrow(pplt.df), function(x){ paste( pplt.df$FUEL[x], pplt.df$UTYPE[x], sep = '_' ) } ) )																					
+# crop with pakistan
+ppl.spdf2 = ppl.spdf
+proj4string(ppl.spdf2) = proj4string( pakistan.spdf )
+ppl.spdf2 = crop( ppl.spdf2, extent( pakistan.spdf ) )
+ppl.spdf2 = crop( ppl.spdf2, extent( basin.spdf ) ,snap = 'out')
+ppl.spdf2 = cbind( data.frame( ppl.spdf2 ), over( ppl.spdf2, pakistan.spdf[ ,'ISO'])) %>% 
+  filter( !is.na( ISO ) ) %>% 
+  mutate( TPS = as.character( TPS ) ) %>%
+  mutate( TPS = if_else(TPS %in% factor( c( "solar_th","solar_th_ac","solar_th_cl" ) ),'solar_csp',TPS) ) %>%
+  mutate( TPS = as.factor( TPS )  )%>%
+  as.data.frame() %>% 'coordinates<-'(~x+y) %>% 
+  'proj4string<-'(proj4string(basin.spdf)) 	
 
-# Mapping to message ssp2 technology names
-# map2ssp = data.frame( 	ppl_name = c('Oil_ST', 'Coal_ST', 'Biofuel_ST', 'Gas_CC', 'Nuclear_ST', 'Geo_ST', 'Solar_ST', 'Waste_ST', 'Gas_IC', 'Oil_IC', 'Gas_GT', 'Solar_PV', 'Oil_GT', 'Biogas_IC', 'Wind_WT', 'Biomass_IC'),
-# 						msg_name = c('loil_ppl', 'coal_ppl', 'bio_ppl', 'gas_cc', 'nuc_lc', 'geo_ppl', 'solar_th_ppl', 'mw_ppl', 'gas_ct', 'foil_ppl', 'gas_ct', 'solar_pv_ppl', 'foil_ppl', 'bio_ppl', 'wind_ppl', 'bio_ppl') )
-# 
-# pplt.df$msg_utype = rep(NA,length(pplt.df$tps_utype))
-# for(i in 1:nrow(map2ssp))
-# 	{
-# 	pplt.df$msg_utype[ as.character( pplt.df$tps_utype ) == as.character( map2ssp$ppl_name[i] ) ] = as.character( map2ssp$msg_name[i] ) 
-# 	}						
-# pplt.df$TPS = unlist( lapply( 1:nrow(pplt.df), function(x){ paste( pplt.df$FUEL[x], pplt.df$UTYPE[x], pplt.df$COOL[x], sep = '_' ) } ) )
-				
-# add hydropower
-global_hydropower.spdf = readOGR("input/powerplants",'global_hydropower_plants')
-global_hydropower.df = data.frame(global_hydropower.spdf)
-pplt.df = bind( ppl.df, data.frame( 	LOCATIONID = rep(NA,length(global_hydropower.spdf)),
-										LAT = global_hydropower.df$coords.x1,
-										LON = global_hydropower.df$coords.x2,
-										UNIT = rep(NA,length(global_hydropower.spdf)),
-										PLANT = rep(NA,length(global_hydropower.spdf)),
-										YEAR = global_hydropower.df$YEAR,
-										MW = global_hydropower.df$MW,
-										FUEL = rep('Hydro',length(global_hydropower.spdf)),
-										UTYPE = rep('HY',length(global_hydropower.spdf)),
-										COOL = rep(NA,length(global_hydropower.spdf)),
-										#tps_utype = rep(paste('Wat_HY'),length(global_hydropower.spdf)),
-										#msg_utype = 'hydro_lc',
-										TPS = rep(paste('hydro'),length(global_hydropower.spdf)) ) )
+plot(ppl.spdf2)
+plot(pakistan.spdf,add = T)
+plot(basin.spdf,add = T)
 
-# some changes to make names consistend with message		
-pplt.df <- pplt.df %>% 
-  mutate(TPS = if_else(TPS %in% c( "solar_th","solar_th_ac","solar_th_cl" ),"solar_csp",TPS)) %>% 
-  mutate(MW = as.numeric(MW)) %>% 
-  filter(!is.na(LAT))
+proj4string(ppl.spdf) = proj4string( basin.spdf )
+ppl.spdf = crop( ppl.spdf, extent( basin.spdf ) )
+ppl.spdf = cbind( data.frame( ppl.spdf ), over( ppl.spdf, basin.spdf[ ,'PID'])) %>% 
+	filter( !is.na( PID ) ) %>% 
+	mutate( TPS = as.character( TPS ) ) %>%
+	mutate( TPS = if_else(TPS %in% factor( c( "solar_th","solar_th_ac","solar_th_cl" ) ),'solar_csp',TPS) ) %>%
+	mutate( TPS = as.factor( TPS )  )%>%
+	as.data.frame() %>% 'coordinates<-'(~x+y) %>% 
+	'proj4string<-'(proj4string(basin.spdf)) 	
 
-unique(sort( pplt.df$TPS))
-# many plants with no locations, the should all be out of the indus basin
-pplt.spdf = pplt.df
-coordinates(pplt.spdf) = ~ LON + LAT
+ppl_pak.spdf = ppl.spdf[grep('PAK',ppl.spdf$PID),]
+ppl_pak.spdf@data %>% filter(STATUS == 'OPR') %>% summarise(MW = sum(MW))
+# 24.8 GW
+ppl.spdf2 = ppl.spdf2[!ppl.spdf2$UNIT %in% ppl_pak.spdf$UNIT, ]
+ppl.df2 = ppl.spdf2@data
+ppl.df2 %>% filter(STATUS == 'OPR') %>% summarise(MW = sum(MW))
+# 5.7 GW mainly in the Karachi area, no large hydropower
 
-# Indus delineatiion
-indus_basin.spdf = readOGR("input",'Indus_bcu')
-indus_basin.spdf@proj4string
-ind_ppl.df = data.frame(crop(pplt.spdf,extent(indus_basin.spdf)))
+# add hydropower from van vliet et al data base and planned projects collected from literature / planning documents
+hydropower.spdf = rbind( 
+	crop( readOGR("input/powerplants",'global_hydropower_plants'), extent( basin.spdf ) ) %>%
+		as.data.frame() %>% rename( x = coords.x1, y = coords.x2 ) %>%
+		mutate( UNIT  = NA, PLANT = NA, UTYPE = factor('HY'), FUEL = factor('HYDRO'), COOL = NA, TPS = factor('hydro'), optional = TRUE ) %>%
+		select( x, y, UNIT, PLANT, STATUS, YEAR,  MW, UTYPE, FUEL, COOL, TPS ) %>% 
+		mutate( MW = as.numeric( as.character( MW ) ) ) %>%
+		'coordinates<-'(~x+y) %>% 'proj4string<-'(proj4string(basin.spdf)),
+	data.frame( read.csv( "input/powerplants/indus_future_hydro_projects.csv", stringsAsFactors = FALSE ) ) %>%
+		rename( YEAR = opening, MW = capacity_MW, UNIT = project.name ) %>%
+		mutate( YEAR = replace( YEAR, YEAR == 'proposed', 2030 ) ) %>%
+		mutate( MW = as.numeric( as.character( MW ) ) ) %>%
+		mutate( PLANT = NA, UTYPE = factor('HY'), STATUS = factor('PLN'), FUEL = factor('HYDRO'), COOL = NA, TPS = factor('hydro'), optional = TRUE ) %>%
+		select( x, y, UNIT, PLANT, STATUS, YEAR,  MW, UTYPE, FUEL, COOL, TPS ) %>% 
+		as.data.frame() %>% 'coordinates<-'(~x+y) %>% 
+		'proj4string<-'(proj4string(basin.spdf)) 
+	)		
+hydropower.spdf = cbind( data.frame( hydropower.spdf ), over( hydropower.spdf, basin.spdf[ ,'PID'])) %>%
+	filter( !is.na( PID ) ) %>% 
+	as.data.frame() %>% 'coordinates<-'(~x+y) %>% 
+	'proj4string<-'(proj4string(basin.spdf)) 
+# 50 GW
 
-unique(sort( ind_ppl.df$TPS))
-#sum(ind_ppl.df$MW[ind_ppl.df$TPS %in% c("oil_st_cl","oil_st_ot" ,"oil_st_sw"  ) ])
-#sum(ind_ppl.df$MW[ind_ppl.df$TPS == "oil_gt"])
+# Combine power plant data sources
+pplt.spdf = rbind( 	ppl.spdf %>% # remove hydropower
+						as.data.frame() %>% 
+						mutate( MW = as.numeric( as.character( MW ) ) ) %>%
+						filter( UTYPE != 'HY' ) %>% 
+						as.data.frame() %>% 'coordinates<-'(~x+y) %>% 
+						'proj4string<-'(proj4string(basin.spdf)),
+					hydropower.spdf )	
+					
 # technologies with no cooling, dont want to spread into cooling tech
-ind_ppl.df<- ind_ppl.df %>% 
-  mutate(TPS = as.character(TPS)) %>% 
-  mutate(TPS = gsub("biogas_","biomass_",TPS)) %>% 
-  mutate(TPS = if_else(TPS == "gas_ic","gas_gt",
-                       if_else(TPS == "biomass_gt","biomass_st",
-                  if_else(TPS == "oil_ic","oil_gt",TPS) )  ) )
+pplt.spdf@data <- pplt.spdf@data %>% 
+	mutate(TPS = as.character(TPS)) %>% 
+	mutate(TPS = gsub("biogas_","biomass_",TPS)) %>% 
+	mutate(TPS = if_else(TPS == "gas_ic","gas_gt", if_else(TPS == "biomass_gt","biomass_st", if_else(TPS == "oil_ic","oil_gt",TPS) ) ) )
 
-unique(sort( ind_ppl.df$TPS))
 tech_no_cool <- c("gas_gt","oil_gt","wind","hydro","solar_pv")
 
 # calculate share of cooling technologies
-share_cool <- ind_ppl.df %>% 
-  dplyr::select(MW,FUEL,COOL) %>% 
-  filter(!is.na(COOL)) %>% 
-  group_by(FUEL,COOL) %>% 
-  summarize(MW = sum(MW)) %>% ungroup() %>% 
-  group_by(FUEL) %>% 
-  mutate(share = MW/sum(MW))
+share_cool <- pplt.spdf@data %>% 
+	dplyr::select(MW,FUEL,COOL) %>% 
+	filter(!is.na(COOL)) %>% 
+	group_by(FUEL,COOL) %>% 
+	summarize(MW = sum(MW)) %>% ungroup() %>% 
+	group_by(FUEL) %>% 
+	mutate(share = MW/sum(MW)) %>% as.data.frame()
 
-
-new_tech <- bind_rows(ind_ppl.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "ac"),
-                      ind_ppl.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "cl"),
-                      ind_ppl.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "ot"),
-                      ind_ppl.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "sw") ) %>% 
+pplt.df = data.frame(pplt.spdf)	
+new_tech <- bind_rows(pplt.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "ac"),
+                      pplt.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "cl"),
+                      pplt.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "ot"),
+                      pplt.df %>% filter(is.na(COOL) & !(TPS %in% tech_no_cool) ) %>% mutate(COOL = "sw") ) %>% 
   left_join(share_cool %>% dplyr::select(-MW)) %>% 
   filter(!is.na(share)) %>% 
   mutate(MW = MW*share) %>% 
   mutate(TPS = paste(TPS,COOL,sep = "_")) %>% 
   dplyr::select(-share)
 
-#sort(unique(new_tech$TPS))
-#sum(new_tech$MW[new_tech$TPS %in% c("coal_st_ac"   , "coal_st_cl"   , "coal_st_ot"   , "coal_st_sw") ])
+pplt.df <- bind_rows( pplt.df %>% 
+						filter( !is.na(COOL) | (TPS %in% tech_no_cool) ) %>% 
+						mutate(COOL = as.character(COOL)),
+					new_tech )
+row.names(pplt.df) = 1:nrow(pplt.df)							
+pplt.spdf = pplt.df %>% 
+	'coordinates<-'(~x+y) %>% 
+	'proj4string<-'(proj4string(basin.spdf))
 
-ind_ppl.df <- bind_rows(ind_ppl.df %>% filter(!is.na(COOL) | (TPS %in% tech_no_cool) ) %>% mutate(COOL = as.character(COOL)),
-                         new_tech)
-
-unique(sort( ind_ppl.df$TPS))
-#sum(ind_ppl.df$MW[ind_ppl.df$TPS %in% c("oil_st_cl","oil_st_ot" ,"oil_st_sw"  ) ])
-#sum(ind_ppl.df$MW[ind_ppl.df$TPS == "oil_gt"])
-
-#ind_ppl.df$COOL[which( is.na(ind_ppl.df$COOL) & ind_ppl.df$UTYPE %in% c('ST','CC') )] = 'cl_fresh'
-#ind_ppl.df$TPS = unlist( lapply( 1:nrow(ind_ppl.df), function(x){ if(!is.na(ind_ppl.df$COOL[x])){paste( ind_ppl.df$FUEL[x], ind_ppl.df$UTYPE[x], ind_ppl.df$COOL[x], sep = '_' )}else{paste( ind_ppl.df$FUEL[x], ind_ppl.df$UTYPE[x], sep = '_' )} } ) )
-ind_ppl.spdf = ind_ppl.df
-coordinates(ind_ppl.spdf) = ~ LON + LAT
-proj4string(ind_ppl.spdf) = proj4string(indus_basin.spdf)
-ind_ppl.df = cbind(data.frame(ind_ppl.spdf), over(ind_ppl.spdf,indus_basin.spdf[,which(names(indus_basin.spdf) == 'PID')]))
-ind_ppl.df = ind_ppl.df[-1*c(which(is.na(ind_ppl.df$PID))),]
-ind_ppl.spdf = ind_ppl.df
-coordinates(ind_ppl.spdf) = ~ LON + LAT
-
-plot(ind_ppl.spdf)
-
+# Output plant level database
+writeOGR(  pplt.spdf, 'input', paste(basin,'power_plants',sep='_'),  driver="ESRI Shapefile",  overwrite_layer=TRUE )	
+	
 # historical_new_capacity(node,tec,year_all)
+years = c(1990	,2000	,2010	,2015	,2020	,2030	,2040	,2050	,2060	) # !! must match model horizon !!
+hist_new_cap.df = data.frame( pplt.spdf ) %>% 
+	rename( node = PID, tec = TPS, year_all = YEAR, value = MW ) %>%
+	mutate( year_all = as.numeric( as.character( year_all ) ) ) %>%
+	mutate( year_all = if_else(!is.na(year_all),year_all,
+	                           if_else(STATUS == 'PLN',2020,2015)) ) %>% 
+	mutate( units = 'MW' ) %>%
+	mutate( value = round( value, digits = 3 ) ) %>%
+	filter( value > 0 ) %>% 
+	mutate( year_all = years[ sapply( as.numeric( as.character( year_all ) ), function( yyy ){ which.min( ( years - yyy )^2 ) } ) ] ) %>% 
+	dplyr::select( node, tec, year_all, value, units ) %>%
+	group_by( node, tec, year_all ) %>% summarise( value = sum( value ) ) %>% as.data.frame()
 
-hist_new_cap.spdf <- ind_ppl.spdf
-hist_new_cap.spdf@data <- hist_new_cap.spdf@data %>% 
-  dplyr::select(PID,TPS,YEAR,MW)
+		  
+# Plot the power plants							
+ppls = 	unique( hist_new_cap.df$tec )	
+hist_new_cap.df = hist_new_cap.df %>% mutate( tec = as.character( tec ), node = as.character( node ) )
+cap = hist_new_cap.df	%>% 
+	filter( tec %in% ppls ) %>% 
+	mutate( country = unlist( strsplit( node, '_' ) )[seq(1,2*length(node),by=2)] ) %>%
+	mutate( type = sapply( tec, function( ttt ){ rs = unlist( strsplit( ttt, '_' ) )[1] } ) ) %>%
+	group_by( country, type, year_all ) %>% summarise( value = sum(value) ) %>% ungroup() %>% data.frame()		
+cap_2017 = hist_new_cap.df	%>% 
+	filter( tec %in% ppls, year_all < 2020 ) %>% 
+	mutate( country = unlist( strsplit( node, '_' ) )[seq(1,2*length(node),by=2)] ) %>%
+	mutate( type = sapply( tec, function( ttt ){ rs = unlist( strsplit( ttt, '_' ) )[1] } ) ) %>%
+	group_by( country, type ) %>% summarise( value = sum(value) ) %>% ungroup() %>% data.frame()  	
+cap_2020 = hist_new_cap.df	%>% 
+	filter( tec %in% ppls, year_all >= 2020 ) %>% 
+	mutate( country = unlist( strsplit( node, '_' ) )[seq(1,2*length(node),by=2)] ) %>%
+	mutate( type = sapply( tec, function( ttt ){ rs = unlist( strsplit( ttt, '_' ) )[1] } ) ) %>%
+	group_by( country, type ) %>% summarise( value = sum(value) ) %>% ungroup() %>% data.frame()  	
+
+# existing	
+pdf( 'input/check/indus_electricity_capacity_existing.pdf', width=5, height=6 )
+p1 = layout( matrix( c(2,1),2,1, byrow=TRUE ), widths=c(1), heights=c(0.12,0.9) )
+cap2plot = reshape(cap_2017, direction='wide', idvar = 'type', timevar = 'country' )
+row.names(cap2plot) = cap2plot$type
+ordr = row.names(cap2plot)
+cap2plot = cap2plot[,c(2:ncol(cap2plot))]
+names(cap2plot) = unlist(strsplit(names(cap2plot),'[.]'))[seq(2,2*length(names(cap2plot)),by=2)]
+ordr2 = names(cap2plot)
+cap2plot_tot = colSums( cap2plot, na.rm=TRUE )
+cap2plot_fr = do.call( cbind, lapply( 1:ncol( cap2plot ), function( iii ){ ( 100 * cap2plot[,iii] /  colSums( cap2plot, na.rm=TRUE )[iii] ) } ) )
+cap2plot_fr[is.na(cap2plot_fr)]=0
+par(mar=c(2,4,0.5,3),oma=c(2,2,2,2))
+cols = c( 'red','deepskyblue', 'brown', 'blue', 'green', 'black', 'goldenrod2', 'purple' )
+cntrs = barplot( as.matrix( cap2plot_fr ), names.arg = names( cap2plot ), col = cols, ylab = 'Percent of Total Installed Capacity [ % ]', ylim = c(-2,100) )
+abline(h=0)
+abline(h=100)
+abline(v=par()$usr[1])
+abline(v=par()$usr[2],col='slategray')
+xlim0=par()$usr[1:2]
+par(new=TRUE)
+plot.new()
+plot.window(xlim=xlim0,ylim=c(500,round(max(cap2plot_tot)*1.05, digits=-3)),xaxs="i")
+points( as.vector(cap2plot_tot) ~ cntrs, bg = 'slategray', col = 'white', pch = 21, cex = 2, lwd = 2 )
+axis(side = 4, col = 'slategray', col.axis = 'slategray' )
+mtext('Total Installed Capacity [ MW ]', side = 4, line = 2.75, col = 'slategray' )
+par(mar=c(0.5,4,0,3))
+plot.new()
+legend( 'center', legend = ordr, fill = cols, bty = 'n', ncol = 3, cex = 0.9 )
+dev.off()		 
+
+pdf( 'input/check/indus_electricity_capacity_existing_map.pdf', width=6, height=6 )
+plot( basin.spdf, col = NA, border = NA, xlab = 'Longitude', ylab = 'Latitude'  )
+plot( 	do.call( rbind, lapply( c('IND','PAK','AFG','CHN','NPL','TJK','UZB','TKM','IRN'), function(cnt){ getData( 'GADM', country = cnt, level = 0 ) } ) ), 
+		col = alpha( c('khaki','lightgreen','lightblue','lightcoral','grey75','grey75','grey75','grey75','grey75'), alpha = 0.2 ),
+		border = 'gray55', add = TRUE )	
+plot( basin.sp, col = NA, border = 'grey25', lwd = 1.5, add=TRUE )
+text( 69, 30, 'PAK', col = 'forestgreen',cex=1.5)
+text( 76, 29, 'IND', col = 'brown',cex=1.5)
+text( 80, 36, 'CHN', col = 'darkred',cex=1.5)
+text( 67, 36, 'AFG', col = 'navy',cex=1.5)
+pt1 = data.frame( pplt.spdf ) %>% mutate( YEAR = as.numeric( as.character( YEAR ) ) ) %>% 
+	filter( YEAR < 2018 ) %>% 
+	mutate( type = sapply( as.character( TPS ), function( ttt ){ unlist( strsplit( ttt, '_' ) )[1] } ) ) %>% 
+	rename( x = coords.x1, y = coords.x2 ) %>%
+	select( x, y, type, MW ) %>% 
+	group_by( x, y, type ) %>% summarise( MW = sum (MW ) ) %>% as.data.frame() %>%
+	left_join( ., data.frame( type = ordr, cols = cols ) ) %>%
+	mutate( cex = ( sqrt( MW ) - min( sqrt( pplt.spdf@data$MW ) ) ) / ( max( sqrt( pplt.spdf@data$MW ) ) - min( sqrt( pplt.spdf@data$MW ) ) ) * 4 + 1 ) %>%
+	'coordinates<-'(~x+y) %>% 'proj4string<-'(proj4string(basin.spdf))		
+points( pt1, pch = 21, cex = pt1@data$cex, col = as.character( pt1@data$cols ), bg = alpha( 'white', alpha= 0.6 ) )
+sizes = c(1, 100, 500, 1000, 5000 )
+sgap = c(0,0.5,1.1,1.85,2.85)
+for( iii in 1:length( sizes ) ){ 
+	points( 74.2, 24+sgap[iii], cex = pt1@data$cex[ which.min( ( pt1@data$MW - sizes[iii] )^2 ) ], pch = 21, col = 'gray35', bg = 'gray35' ) 
+	text( 74, 24+sgap[iii], paste0( sizes[ iii ], ' MW ' ), col = 'gray35', cex = 0.9, pos = 2 )
+	}
+axis(side=1,at=c())
+axis(side=2,at=c())
+box()
+legend( 'bottomright', legend = ordr, pch = 21, pt.bg = 'white', col = cols, lwd = 2, lty = NA, pt.cex = 1.8, ncol = 2, bty = 'n', cex = 0.95 )
+dev.off()
 
 
-year_all <- c(1990	,2000	,2010	,2015	,2020	,2030	,2040	,2050	,2060	)
-range_year <- seq(-4,5,1)
-map_year <- data.frame()
-for (i in seq_along(year_all)) {
-  for (j in seq_along(range_year)) {
-    tmp = data.frame(YEAR = c(year_all[i]+range_year[j]),year_all = year_all[i])
-    map_year<- rbind(map_year,tmp)
-  }
-  
-}
+# planned
+pdf( 'input/check/indus_electricity_capacity_planned.pdf', width=5, height=6 )
+p1 = layout( matrix( c(2,1),2,1, byrow=TRUE ), widths=c(1), heights=c(0.12,0.9) )
+cap2plot = reshape(cap_2020, direction='wide', idvar = 'type', timevar = 'country' )
+row.names(cap2plot) = cap2plot$type
+cap2plot = cap2plot[,c(2:ncol(cap2plot))]
+names(cap2plot) = unlist(strsplit(names(cap2plot),'[.]'))[seq(2,2*length(names(cap2plot)),by=2)]
+if( !('CHN' %in% names(cap2plot) ) ){ cap2plot = cbind( data.frame( CHN = rep( NA, nrow( cap2plot ) ) ), data.frame( cap2plot ) ) }
+cap2plot = cap2plot[ ,ordr2]
+cap2plot = cap2plot[ordr,]
+cap2plot_tot = colSums( cap2plot, na.rm=TRUE )
+cap2plot_fr = do.call( cbind, lapply( 1:ncol( cap2plot ), function( iii ){ ( 100 * cap2plot[,iii] /  colSums( cap2plot, na.rm=TRUE )[iii] ) } ) )
+cap2plot_fr[is.na(cap2plot_fr)]=0
+par(mar=c(2,4,0.5,3),oma=c(2,2,2,2))
+cntrs = barplot( as.matrix( cap2plot_fr ), names.arg = names( cap2plot ), col = cols, ylab = 'Percent of Total Planned Capacity [ % ]', ylim = c(-2,100) )
+abline(h=0)
+abline(h=100)
+abline(v=par()$usr[1])
+abline(v=par()$usr[2],col='slategray')
+xlim0=par()$usr[1:2]
+par(new=TRUE)
+plot.new()
+plot.window(xlim=xlim0,ylim=c(800,round(max(cap2plot_tot)*1.05, digits=-3)),xaxs="i")
+points( as.vector(cap2plot_tot) ~ cntrs, bg = 'slategray', col = 'white', pch = 21, cex = 2, lwd = 2 )
+axis(side = 4, col = 'slategray', col.axis = 'slategray' )
+mtext('Total Planned Capacity [ MW ]', side = 4, line = 2.75, col = 'slategray' )
+par(mar=c(0.5,4,0,3))
+plot.new()
+legend( 'center', legend = ordr, fill = cols, bty = 'n', ncol = 3, cex = 0.9 )
+dev.off()		  
 
-to_remove<-data.frame(YEAR =     as.numeric(c(2013,2014,2015,2011,2012,2018,2019,2020,2016,2017)),
-                      year_all = as.numeric(c(2010,2010,2010,2015,2015,2015,2015,2015,2020,2020)))
 
-map_year <- map_year %>% anti_join(to_remove)
+pdf( 'input/check/indus_electricity_capacity_planned_map.pdf', width=6, height=6 )
+plot( basin.spdf, col = NA, border = NA, xlab = 'Longitude', ylab = 'Latitude' )
+plot( 	do.call( rbind, lapply( c('IND','PAK','AFG','CHN','NPL','TJK','UZB','TKM','IRN'), function(cnt){ getData( 'GADM', country = cnt, level = 0 ) } ) ), 
+		col = alpha( c('khaki','lightgreen','lightblue','lightcoral','grey75','grey75','grey75','grey75','grey75'), alpha = 0.2 ),
+		border = 'gray55', add = TRUE )	
+plot( basin.sp, col = NA, border = 'grey25', lwd = 1.5, add=TRUE )
+text( 69, 30, 'PAK', col = 'forestgreen',cex=1.5)
+text( 76, 29, 'IND', col = 'brown',cex=1.5)
+text( 80, 36, 'CHN', col = 'darkred',cex=1.5)
+text( 67, 36, 'AFG', col = 'navy',cex=1.5)
+pt1 = data.frame( pplt.spdf ) %>% mutate( YEAR = as.numeric( as.character( YEAR ) ) ) %>% 
+	filter( YEAR >= 2018 ) %>% 
+	mutate( type = sapply( as.character( TPS ), function( ttt ){ unlist( strsplit( ttt, '_' ) )[1] } ) ) %>% 
+	select( x, y, type, MW ) %>% 
+	group_by( x, y, type ) %>% summarise( MW = sum (MW ) ) %>% as.data.frame() %>%
+	left_join( ., data.frame( type = ordr, cols = cols ) ) %>%
+	mutate( cex = ( sqrt( MW ) - min( sqrt( pplt.spdf@data$MW ) ) ) / ( max( sqrt( pplt.spdf@data$MW ) ) - min( sqrt( pplt.spdf@data$MW ) ) ) * 4 + 1 ) %>%
+	'coordinates<-'(~x+y) %>% 'proj4string<-'(proj4string(basin.spdf))		
+points( pt1, pch = 21, cex = pt1@data$cex, col = as.character( pt1@data$cols ), bg = alpha( 'white', alpha= 0.6 ) )
+for( iii in 1:length( sizes ) ){ 
+	points( 74.2, 24+sgap[iii], cex = pt1@data$cex[ which.min( ( pt1@data$MW - sizes[iii] )^2 ) ], pch = 21, col = 'gray35', bg = 'gray35' ) 
+	text( 74, 24+sgap[iii], paste0( sizes[ iii ], ' MW ' ), col = 'gray35', cex = 0.9, pos = 2 )
+	}
+axis(side=1,at=c())
+axis(side=2,at=c())
+box()
+legend( 'bottomright', legend = ordr, pch = 21, pt.bg = 'white', col = cols, lwd = 2, lty = NA, pt.cex = 1.8, ncol = 2, bty = 'n', cex = 0.95 )
+dev.off()
 
-too_old <- 1990
-hist_new_cap.df <- hist_new_cap.spdf@data %>% 
-  mutate(YEAR = as.numeric(as.character(YEAR))) %>% 
-  left_join(map_year) %>% 
-  mutate(year_all = if_else ((YEAR <= 1986 & YEAR >= too_old), 1990 , year_all)) %>% 
-  filter(year_all >= 1990) %>% 
-  dplyr::select(-YEAR) %>% 
-  group_by(PID,TPS,year_all) %>% 
-  summarise(MW = sum(MW))
+# Output to CSV for reading as input to MESSAGE 
 
-names(hist_new_cap.df) <- c("node","tec","year_all","value")
-
-write.csv(hist_new_cap.df,file = "input/historical_new_cap.csv",
-          row.names = F)  
-
-hist_new_cap.df = read.csv( "input/historical_new_cap.csv", stringsAsFactors = FALSE )
-	  
 hist_new_cap.df$units = 'MW'
 
-write.csv(hist_new_cap.df,file = "input/historical_new_cap.csv",
-          row.names = F) 		  
+if( !file.exists( "input/historical_new_cap.csv" ) ){ fl = hist_new_cap.df }else{
+	
+	fl = bind_rows( read.csv( "input/historical_new_cap.csv" ) %>% filter( !( units == 'MW' ) ), hist_new_cap.df )
+						
+	}
+	
+write.csv( fl, file = "input/historical_new_cap.csv", row.names = F ) 		  
 		  

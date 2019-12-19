@@ -17,12 +17,11 @@
 
 # Gas combined cycle with once through freshwater cooling
 
-# capacity factor drop in flexibility mode, modelled as output decrease and var_cost increase
-dCF = 0.9 # actually (1-(CF0-CF))
 msg_tec = 'gas_cc' # tec name in MESSAGE IAM
 vtgs = year_all
 nds = bcus
 lft = 20
+dCF = 0.9 # capacity factor drop in flexibility mode, modelled as output decrease and var_cost increase actually (1-(CF0-CF))
 vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
 gas_cc_ot = list( 	nodes = nds,
@@ -139,7 +138,7 @@ gas_cc_ot = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -202,13 +201,15 @@ gas_cc_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_cc_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 
@@ -332,7 +333,7 @@ gas_cc_cl = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -393,13 +394,15 @@ gas_cc_cl = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_cc_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 				
@@ -523,7 +526,7 @@ gas_cc_ac = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -584,13 +587,15 @@ gas_cc_ac = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_cc_ac",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 					
@@ -665,7 +670,7 @@ gas_cc_sw = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -725,13 +730,15 @@ gas_cc_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_cc_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 					
@@ -807,7 +814,7 @@ gas_gt = list( 		nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( ., gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( ., gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( ., emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -989,7 +996,7 @@ gas_st_ot = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -1049,13 +1056,15 @@ gas_st_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_st_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 					
@@ -1179,7 +1188,7 @@ gas_st_cl = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -1240,13 +1249,15 @@ gas_st_cl = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_st_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 
@@ -1370,7 +1381,7 @@ gas_st_ac = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -1431,13 +1442,15 @@ gas_st_ac = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_st_ac",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 # Gas single cycle with once-through sea cooling
@@ -1522,7 +1535,7 @@ gas_st_sw = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -1583,13 +1596,15 @@ gas_st_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "gas_st_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 
@@ -1711,7 +1726,7 @@ oil_cc_ot = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -1772,13 +1787,15 @@ oil_cc_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_cc_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -1901,7 +1918,7 @@ oil_cc_cl = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -1961,13 +1978,15 @@ oil_cc_cl = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_cc_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -2090,7 +2109,7 @@ oil_cc_ac = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -2151,13 +2170,15 @@ oil_cc_ac = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_cc_ac",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -2231,7 +2252,7 @@ oil_cc_sw = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -2291,13 +2312,15 @@ oil_cc_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_cc_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -2375,7 +2398,7 @@ oil_gt = list( 		nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -2435,7 +2458,7 @@ oil_gt = list( 		nodes = nds,
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_gt",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 10	)
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 10	)
 
 					)
 
@@ -2559,7 +2582,7 @@ oil_st_ot = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -2619,13 +2642,15 @@ oil_st_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_st_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -2751,7 +2776,7 @@ oil_st_cl = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -2812,13 +2837,15 @@ oil_st_cl = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_st_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -2944,7 +2971,7 @@ oil_st_ac = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -3005,13 +3032,15 @@ oil_st_ac = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_st_ac",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -3098,7 +3127,7 @@ oil_st_sw = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -3159,13 +3188,15 @@ oil_st_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "oil_st_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	) %>% 
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 1e-6	) %>% 
 					  mutate(value = if_else(!grepl('PAK',node),value,
 					                         if_else(year_all %in% c(2020,2030),50,value ) ) )
 
@@ -3312,7 +3343,7 @@ coal_st_ot = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -3373,13 +3404,15 @@ coal_st_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_ot",],
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_ot",]
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					# growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 			
@@ -3527,7 +3560,7 @@ coal_st_cl = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -3588,13 +3621,15 @@ coal_st_cl = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_cl",],
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_cl",]
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					# growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 
@@ -3741,7 +3776,7 @@ coal_st_ac = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -3802,13 +3837,15 @@ coal_st_ac = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_ac",],
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_ac",]
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					# growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 # Pulveized coal with once-through sea cooling
@@ -3907,7 +3944,7 @@ coal_st_sw = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -3968,13 +4005,15 @@ coal_st_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_sw",],
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "coal_st_sw",]
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					# growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 
@@ -4096,7 +4135,7 @@ igcc_ot = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -4157,13 +4196,15 @@ igcc_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "igcc_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 
@@ -4284,7 +4325,7 @@ igcc_cl =  list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -4345,13 +4386,15 @@ igcc_cl =  list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "igcc_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 					
@@ -4473,7 +4516,7 @@ igcc_ac =  list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -4533,13 +4576,15 @@ igcc_ac =  list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "igcc_ac",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 					
@@ -4611,7 +4656,7 @@ igcc_sw = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 														
 						) %>% # aggregate CO2eq emissions
-						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% select( -gwp ) %>%
+						left_join( . , gwp.df ) %>% mutate( CO2eq = value * gwp ) %>% dplyr::select( -gwp ) %>%
 						bind_rows( ., gather( . , emission, value, -node, -vintage, -year_all, -mode, -emission,   -value, CO2eq) ) %>%
 						group_by( node,  vintage, year_all, mode, emission ) %>% summarise( value = sum( value, na.rm=TRUE ) ) %>%
 						ungroup( ) %>% data.frame ( ) %>%
@@ -4672,19 +4717,21 @@ igcc_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "igcc_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.5	)
 
 					)
 					
 # nuclear with once through freshwater cooling
 vtgs = year_all
-nds = bcus
+nds = bcus[!grepl('AFG',bcus)]
 nuclear_ot = list( 	nodes = nds,
 					years = year_all,
 					times = time,
@@ -4841,21 +4888,21 @@ nuclear_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "nuclear_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	) %>% 
-					  bind_rows(data.frame(node = c('AFG_1','AFG_2'), year_all = c(2020),value = 0)) %>% 
-					  mutate(value = if_else(node %in% c('AFG_1','AFG_2'),0,value))
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 1e-6	)
 
 					)
 					
 # nuclear with closed-loop freshwater cooling
 vtgs = year_all
-nds = bcus
+nds = bcus[!grepl('AFG',bcus)]
 nuclear_cl =  list( 	nodes = nds,
 					years = year_all,
 					times = time,
@@ -5011,21 +5058,21 @@ nuclear_cl =  list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "nuclear_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	) %>% 
-					  bind_rows(data.frame(node = c('AFG_1','AFG_2'), year_all = c(2020),value = 0)) %>% 
-					  mutate(value = if_else(node %in% c('AFG_1','AFG_2'),0,value))
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 1e-6	)
 
 					)
 				
 # nuclear with once-through sea cooling
 vtgs = year_all
-nds = coast_pid
+nds = coast_pid[grepl('PAK',coast_pid)]
 nuclear_sw = list( 	nodes = nds,
 					years = year_all,
 					times = time,
@@ -5132,13 +5179,15 @@ nuclear_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "nuclear_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.5	)
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 1e-6	)
 
 					)
 					
@@ -5301,7 +5350,9 @@ geothermal_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "geothermal_ot",],
@@ -5310,7 +5361,7 @@ geothermal_ot = list( 	nodes = nds,
 					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030), value = 5	),
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.05	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.05	)
 
 
 					)
@@ -5474,7 +5525,9 @@ geothermal_cl =  list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "geothermal_cl",],
@@ -5483,7 +5536,7 @@ geothermal_cl =  list( 	nodes = nds,
 					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030), value = 5	),
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.05	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.05	)
 
 					)
 
@@ -5597,7 +5650,9 @@ geothermal_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "geothermal_sw",],
@@ -5606,7 +5661,7 @@ geothermal_sw = list( 	nodes = nds,
 					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030), value = 5	),
 					
 					# data.frame(node,inv_tec,year)
-					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 0.05	)
+					growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2040,2050,2060), value = 0.05	)
 
 
 					)
@@ -5770,7 +5825,9 @@ biomass_st_ot = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "biomass_st_ot",]
@@ -5937,7 +5994,9 @@ biomass_st_cl = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "biomass_st_cl",]
@@ -6103,7 +6162,9 @@ biomass_st_ac = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "biomass_st_ac",]
@@ -6220,7 +6281,9 @@ biomass_st_sw = list( 	nodes = nds,
 					min_utilization_factor = left_join( expand.grid( 	node = nds,
 																		vintage = vtgs,
 																		value = 0.5	),
-														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
+														vtg_year ) %>% 
+					  mutate(value = if_else(vintage < 2030 , 1,value) ) %>% 
+					  dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "biomass_st_sw",]
@@ -6999,121 +7062,121 @@ lft = 30
 vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
 nds = as.character( water_resources.df$node[ which( water_resources.df$existing_MW > 0 | water_resources.df$planned_MW > 0 ) ] )
-bound_total_capacity_lo_hydro = do.call( rbind, lapply( nds, function( nn ){ 
-	data.frame( node = rep( nn, length( year_all[ year_all > baseyear ] ) ), 
-				year_all = year_all[ year_all > baseyear ], 
-				value = rep( ( water_resources.df$existing_MW[ which( water_resources.df$node ==  nn ) ] + water_resources.df$planned_MW[ which( water_resources.df$node ==  nn ) ] ), length( year_all[ year_all > baseyear ] ) ) ) 
-	} ) )
+
+bound_total_capacity_lo_hydro = water_resources.df %>% select(node,existing_MW,planned_MW) %>% 
+  tidyr::crossing(year_all = year_all[ year_all > baseyear ]) %>% 
+  mutate(value = if_else(year_all == 2020, existing_MW, existing_MW + planned_MW)) %>% 
+  filter(value != 0) %>% dplyr::select(node,year_all,value)
+
 hydro_old = list( 	nodes = nds,
-				years = year_all,
-				times = time,
-				vintages = vtgs,	
-				types = c('power'),
-				modes = c( 1 ),
-				lifetime = lft,
-				
-				input = bind_rows(  left_join(  expand.grid( 	node = nds,
-																vintage = vtgs,
-																mode = c(1,2), 
-																commodity = 'hydro_potential_old', 
-																level = 'energy_secondary',
-																value =  1 ) ,
-												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
-												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),	
-									
-					),
+					years = year_all,
+					times = time,
+					vintages = vtgs,	
+					types = c('power'),
+					modes = c( 1 ),
+					lifetime = lft,
 					
-				output = bind_rows( left_join(  expand.grid( 	node = nds,
-																vintage = vtgs,
-																mode = 1, 
-																commodity = 'electricity', 
-																level = 'energy_secondary',
-																value = 1 ) ,
-												vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
-												dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),
-												
-									left_join(  expand.grid( 	node = nds,
-																vintage = vtgs,
-																mode = 2, 
-																commodity = 'electricity', 
-																level = 'energy_secondary',
-																value = 1 * dCF ) ,
-												vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
-												dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),
-															
-									left_join(   expand.grid( 	node = nds,
-																vintage = vtgs,
-																mode = 2, 
-																commodity = 'flexibility', 
-																level = 'energy_secondary',
-																value = 0.5 ) ,
-												vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
-												dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )				
-					
-					),	
-
-				# data.frame( node,vintage,year_all,mode,emission) 
-				emission_factor = bind_rows( 	left_join( expand.grid( node = nds,
-																		vintage = vtgs,
-																		mode = c(1,2), 
-																		emission = 'CO2', 
-																		value = round( 0 , digits = 5 ) ) ,
-													vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
-
-					),										
+					input = bind_rows(  left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = c(1,2), 
+																	commodity = 'hydro_potential_old', 
+																	level = 'energy_secondary',
+																	value =  1 ) ,
+													vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),	
+										
+						),
+						
+					output = bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'electricity', 
+																	level = 'energy_secondary',
+																	value = 1 ) ,
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),
+													
+										left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 2, 
+																	commodity = 'electricity', 
+																	level = 'energy_secondary',
+																	value = 1 * dCF ) ,
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),
 																
-				# data.frame(node,vintage,year_all,time)
-				capacity_factor = left_join( 	expand.grid( 	node = nds,
+										left_join(   expand.grid( 	node = nds,
 																	vintage = vtgs,
-																	value = 0.95 ) ,
-													vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
-					
-				# data.frame( vintages, value )
-				construction_time = expand.grid( 	node = nds,
-													vintage = vtgs,
-													value = 0	),
-				
-				# data.frame( vintages, value )
-				technical_lifetime = expand.grid( 	node = nds,
-													vintage = vtgs,
-													value = lft	),
-				
-				# data.frame( vintages, value )
-				inv_cost = expand.grid( node = nds,
-										vintage = vtgs,
-										value = 3.500	),
-				
-				# data.frame( node, vintages, year_all, value )
-				fix_cost = left_join( 	expand.grid( 	node = nds,
+																	mode = 2, 
+																	commodity = 'flexibility', 
+																	level = 'energy_secondary',
+																	value = 0.5 ) ,
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )				
+						
+						),	
+
+					# data.frame( node,vintage,year_all,mode,emission) 
+					emission_factor = bind_rows( 	left_join( expand.grid( node = nds,
+																			vintage = vtgs,
+																			mode = c(1,2), 
+																			emission = 'CO2', 
+																			value = round( 0 , digits = 5 ) ) ,
+														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
+
+						),										
+																	
+					# data.frame(node,vintage,year_all,time)
+					capacity_factor = left_join( 	expand.grid( 	node = nds,
+																		vintage = vtgs,
+																		value = 0.95 ) ,
+														vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+						
+					# data.frame( vintages, value )
+					construction_time = expand.grid( 	node = nds,
 														vintage = vtgs,
-														value = 0.015	),
-										vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
-				
-				# data.frame( node, vintage, year_all, mode, time, value ) 
-				var_cost = bind_rows( 	left_join(  expand.grid( 	node = nds,
-																	vintage = vtgs,
-																	mode = 1,
-																	time = time,
-																	value = 0.000	),
-													vtg_year_time ) %>% 
-														dplyr::select( node, vintage, year_all, mode, time, value ) 
-														
-										),							
-											
-				# Bound total capacity based on existing and planned MW
-				# data.frame(node,year_all,value)
-				bound_total_capacity_lo = bound_total_capacity_lo_hydro,
-				
-				# Upper bound equal to lower bound to prevent building in future years beyond planned - 
-				# add additional 0.1 % to allow for some room beteweeen bounds for optimization efficiency
-				bound_total_capacity_up = bound_total_capacity_lo_hydro %>% mutate( value = value * 1.001 ),		
-				
-				# data.frame(node,year_all)
-				historical_new_capacity = hist_new_cap.df %>%
-											filter( tec == 'hydro' & year_all <= baseyear ) %>%
-											dplyr::select( node, year_all, value )	
-				
-				)
+														value = 0	),
+					
+					# data.frame( vintages, value )
+					technical_lifetime = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = lft	),
+					
+					# data.frame( vintages, value )
+					inv_cost = expand.grid( node = nds,
+											vintage = vtgs,
+											value = 5	),
+					
+					# data.frame( node, vintages, year_all, value )
+					fix_cost = left_join( 	expand.grid( 	node = nds,
+															vintage = vtgs,
+															value = 0.015	),
+											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
+					
+					# data.frame( node, vintage, year_all, mode, time, value ) 
+					var_cost = bind_rows( 	left_join(  expand.grid( 	node = nds,
+																		vintage = vtgs,
+																		mode = 1,
+																		time = time,
+																		value = 0.000	),
+														vtg_year_time ) %>% 
+															dplyr::select( node, vintage, year_all, mode, time, value ) 
+															
+											),							
+												
+					# Bound total capacity based on existing and planned MW
+					# data.frame(node,year_all,value)
+					# bound_total_capacity_lo = bound_total_capacity_lo_hydro,
+					
+					# Upper bound equal to lower bound to prevent building in future years beyond planned - 
+					# add additional 0.1 % to allow for some room beteweeen bounds for optimization efficiency
+					bound_total_capacity_up = bound_total_capacity_lo_hydro %>% mutate( value = value * 1.001 ),		
+					
+					# data.frame(node,year_all) 
+					historical_new_capacity = hist_new_cap.df %>%
+						filter( tec == 'hydro')	
+					
+					)
 
 
 # New hydropower - river technologies, highly dependent on upstream flow_routes
@@ -7191,12 +7254,12 @@ hydro_river = list( 	nodes = nds,
 				# data.frame( vintages, value )
 				technical_lifetime = expand.grid( 	node = nds,
 													vintage = vtgs,
-													value = lft	),
+													value = 50	),
 				
 				# data.frame( vintages, value )
 				inv_cost = expand.grid( node = nds,
 										vintage = vtgs,
-										value = 3.500	),
+										value = 5	),
 				
 				# data.frame( node, vintages, year_all, value )
 				fix_cost = left_join( 	expand.grid( 	node = nds,
@@ -7284,9 +7347,10 @@ hydro_canal = list( 	nodes = nds,
 												data.frame( node = rep( nn, length(time) ),
 															year_all = rep( yy, length(time) ),
 															time = time,
-															value = unlist( sapply( unlist( water_resources.df[ which( as.character( water_resources.df$node ) == nn ), grepl( yy, names(water_resources.df) ) ] ) *
+															value = unlist( sapply( unlist( water_resources.df[ which( as.character( water_resources.df$node ) == nn ), grepl( paste0( 'runoff_km3_per_day_', yy ), names(water_resources.df) )  ] ) *
 																					c( water_resources.df[ which( as.character( water_resources.df$node ) == nn ), 'canal_mw_per_km3_per_day' ] ) / 
-																					c( water_resources.df[ which( as.character( water_resources.df$node ) == nn ), 'canal_max_mw' ] ), function(iii){ min( 1, round( iii, digits = 3) ) } ) )  )
+																					c( water_resources.df[ which( as.character( water_resources.df$node ) == nn ), 'canal_max_mw' ] ), function(iii){ min( 1, round( iii, digits = 3) ) } ) ),
+																					row.names = 1:length(time)  )
 																					
 												} ) ) } ) ),
 												vtg_year ) %>% dplyr::select( node,  vintage, year_all, time, value ),
@@ -7304,7 +7368,7 @@ hydro_canal = list( 	nodes = nds,
 				# data.frame( vintages, value )
 				inv_cost = expand.grid( node = nds,
 										vintage = vtgs,
-										value = 3.500	),
+										value = 5	),
 				
 				# data.frame( node, vintages, year_all, value )
 				fix_cost = left_join( 	expand.grid( 	node = nds,
@@ -7842,7 +7906,7 @@ vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = 
 for( jjj in 1:length(adjacent_routes) ){ # add
 
 	routes_names <- paste0('trs_',adjacent_routes)
-	
+	nds = unlist( strsplit( adjacent_routes[jjj], '[|]' ) )[1]
 	assign( routes_names[jjj], 
 		
 		list( 	nodes = unlist( strsplit( adjacent_routes[jjj], '[|]' ) )[1],
@@ -7955,13 +8019,42 @@ for( jjj in 1:length(adjacent_routes) ){ # add
 	}
 
 # externl routes no input or output for countries
+#extimate of elec export to Karachi area # 0.791 ratio of population that is not in the basin
+# we scale pakistan electricity demand accordingly, then remove 5.7GW * 0.75 (CF) * 30*24 /12
+elec_exp =demand.df %>% filter(grepl('PAK',node), commodity == 'electricity') %>% 
+  mutate(value = value * (1 - 0.791) / 0.791 ) %>% #in MW month
+  group_by(level,year_all,time) %>% summarise(value = sum(value)) %>% ungroup() %>% 
+  #subtract external generation capacity to esternal industry demand
+  mutate(value = if_else(level == 'industry_final',value - (5700/12), value)) %>% 
+  group_by(year_all,time) %>% summarise(value = sum(value))
+
 vtgs = year_all
 lft = 30
 vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
+trs_hurdle.df$hurdle[trs_hurdle.df$tec == 'PAK_4|PAK'] = 0
 for( jjj in 1:length(electricity_export_routes) ){ # add
 	
 	exp_routes_names <- paste0('trs_',electricity_export_routes)
+	nds = unlist( strsplit( electricity_export_routes[jjj], '[|]' ) )[1]
+	
+	if (electricity_export_routes[jjj] == "PAK_4|PAK"){ 
+	  tmp_bound_act_lo =  elec_exp %>% 
+	    crossing(node = "PAK_4",
+	             mode = 1) %>% 
+	    select(node,year_all,mode,time,value)
+	  
+	  tmp_bound_act_up =  crossing(node = "PAK_4",
+	             mode = c('2'),
+	             year_all = as.character(year_all),
+	             time = time,
+	             value =  1e-6) %>% 
+	    select(node,year_all,mode,time,value)
+	  
+	} else { 
+	  tmp_bound_act_lo =  NULL 
+	  tmp_bound_act_up = NULL
+	}
 	
 	assign( exp_routes_names[jjj], 
 	
@@ -7998,9 +8091,9 @@ for( jjj in 1:length(electricity_export_routes) ){ # add
 				# data.frame( node,vintage,year_all,mode,emission) 
 				emission_factor = bind_rows( 	left_join( expand.grid( node = nds,
 																		vintage = vtgs,
-																		mode = 1, 
+																		mode = 2, 
 																		emission = 'CO2', 
-																		value = round( 0 , digits = 5 ) ) ,
+																		value = round( 0.0561 * 1.88 * 60 * 60 * 24 / 1e3, digits = 5 ) ) , # test with ccgt ef
 													vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value )
 
 					),										
@@ -8043,9 +8136,13 @@ for( jjj in 1:length(electricity_export_routes) ){ # add
 														
 										),
 										
-				historical_new_capacity = transmission_routes.df[transmission_routes.df$tec == exp_routes_names[jjj],]	,
+				historical_new_capacity = transmission_routes.df[transmission_routes.df$tec == exp_routes_names[jjj],] %>% mutate( value = 0.1 * value ),
 				
-				growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 0.05	)
+				# growth_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 0.0005	),
+				
+				bound_activity_lo = tmp_bound_act_lo,
+				
+				bound_activity_up = tmp_bound_act_up
 				
 			)
 		)
@@ -8054,10 +8151,84 @@ for( jjj in 1:length(electricity_export_routes) ){ # add
 
 #### Water technologies
 
+# sw_extract - generalized surface water extraction technology 	
+# Note that for the sw_extract and gw_extract, no costs are included because these technologies are just aggregating the sectoral withdrawals
+# which makes it easier to constrain based on historical capacity			
+vtgs = year_all
+nds = bcus
+lft = 1
+vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
+vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
+sw_extract = list( 	nodes = nds,
+					years = year_all,
+					times = time,
+					vintages = vtgs,	
+					types = c('water'),
+					modes = c( 1 ),
+					lifetime = lft,
+					
+					input =  bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'freshwater', 
+																	level = 'river_in',
+																	value = 1 ) ,
+													vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),	
+								),
+						
+					output = bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'freshwater', 
+																	level = 'river_div',
+																	value = 1 ) ,
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
+								),	
+
+					# data.frame( node,vintage,year_all,mode,emission) 
+					emission_factor = NULL,										
+																	
+					# data.frame(node,vintage,year_all,time)
+					capacity_factor = left_join( 	expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	value = 1 ) ,
+													vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+					
+					# data.frame( vintages, value )
+					construction_time = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 0	),
+					
+					# data.frame( vintages, value )
+					technical_lifetime = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 1	),
+					
+					# data.frame( vintages, value )
+					inv_cost = expand.grid( node = nds,
+											vintage = vtgs,
+											value = 0	),
+					
+					# data.frame( node, vintages, year_all, value )
+					fix_cost = left_join( 	expand.grid( 	node = nds,
+															vintage = vtgs,
+															value = 0	),
+											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
+					
+					# data.frame( node, vintage, year_all, mode, time, value ) 
+					var_cost = NULL,							
+							
+					# data.frame(node,year_all,value)
+					historical_new_capacity = NULL
+
+					)
+
 # gw_extract					
 vtgs = year_all
 nds = bcus
-lft = 20
+lft = 1
 vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
 gw_extract = list( 	nodes = nds,
@@ -8084,7 +8255,7 @@ gw_extract = list( 	nodes = nds,
 					emission_factor = bind_rows( 	left_join( expand.grid( node = nds,
 																			vintage = vtgs,
 																			mode = 1, 
-																			emission = 'groundwater', 
+																			emission = c('groundwater','water_consumption'), 
 																			value = 1 ) ,
 														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value ) 
 
@@ -8127,7 +8298,7 @@ gw_extract = list( 	nodes = nds,
 					
 vtgs = year_all
 nds = bcus
-lft = 20
+lft = 1
 vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
 renew_gw_extract = list( 	nodes = nds,
@@ -8230,7 +8401,7 @@ urban_sw_diversion = list( 	nodes = nds,
 																vintage = vtgs,
 																mode = c( 1 ), 
 																commodity = 'freshwater', 
-																level = 'river_in',
+																level = 'river_div',
 																value =  1 ) ,
 												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -8278,7 +8449,12 @@ urban_sw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,	
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.2	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "urban_sw_diversion",]
@@ -8360,7 +8536,12 @@ urban_gw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,				
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "urban_gw_diversion",]
@@ -8812,7 +8993,7 @@ industry_sw_diversion = list( 	nodes = nds,
 																vintage = vtgs,
 																mode = c( 1 ), 
 																commodity = 'freshwater', 
-																level = 'river_in',
+																level = 'river_div',
 																value =  1 ) ,
 												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -8860,7 +9041,12 @@ industry_sw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,		
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.2	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "industry_sw_diversion",]
@@ -8942,7 +9128,12 @@ industry_gw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,		
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "industry_gw_diversion",]
@@ -9285,6 +9476,260 @@ industry_wastewater_treatment = list( 	nodes = nds,
 
 					)					
 					
+# industry_wastewater_collection
+vtgs = year_all
+nds = bcus
+lft = 1
+vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
+vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
+industry_wastewater_collection = list( 	nodes = nds,
+					years = year_all,
+					times = time,
+					vintages = vtgs,	
+					types = c('water'),
+					modes = c( 1 ),
+					lifetime = lft,
+					
+					input = bind_rows(  left_join(  expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = c( 1 ), 
+																commodity = 'electricity', 
+																level = 'industry_final',
+																value =  0 ) ,
+												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),
+												
+												left_join(  expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = c( 1 ), 
+																commodity = 'wastewater', 
+																level = 'industry_final',
+																value =  1 ) ,
+												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
+									
+						),
+						
+					output = bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'wastewater', 
+																	level = 'industry_secondary',
+																	value = 1 ) ,
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
+								),	
+
+					# data.frame( node,vintage,year_all,mode,emission) 
+					emission_factor = NULL,										
+																	
+					# data.frame(node,vintage,year_all,time)
+					capacity_factor = left_join( 	expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	value = 1 ) ,
+													vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+					
+					# data.frame( vintages, value )
+					construction_time = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 0	),
+					
+					# data.frame( vintages, value )
+					technical_lifetime = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = lft	),
+					
+					# data.frame( vintages, value )
+					inv_cost = expand.grid( node = nds,
+											vintage = vtgs,
+											value = 0	),
+					
+					# data.frame( node, vintages, year_all, value )
+					fix_cost = left_join( 	expand.grid( 	node = nds,
+															vintage = vtgs,
+															value = 0	),
+											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
+					
+					# data.frame( node, vintage, year_all, mode, time, value ) 
+					var_cost = NULL,							
+							
+					# data.frame(node,year_all,value)
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "industry_wastewater_collection",]
+
+					)
+					
+	
+# industry_wastewater_release
+vtgs = year_all
+nds = bcus
+lft = 1
+vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
+vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
+industry_wastewater_release = list( 	nodes = nds,
+					years = year_all,
+					times = time,
+					vintages = vtgs,	
+					types = c('water'),
+					modes = c( 1 ),
+					lifetime = 1,
+					
+					input = bind_rows(  left_join(  expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = c( 1 ), 
+																commodity = 'electricity', 
+																level = 'industry_final',
+																value =  0 ) ,
+												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),
+												
+												left_join(  expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = c( 1 ), 
+																commodity = 'wastewater', 
+																level = 'industry_final',
+																value =  1 ) ,
+												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
+									
+						),
+						
+					output = bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'freshwater', 
+																	level = 'river_out',
+																	value = 1 ) ,
+																	vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
+								),	
+
+					# data.frame( node,vintage,year_all,mode,emission) 
+					emission_factor = NULL,										
+																	
+					# data.frame(node,vintage,year_all,time)
+					capacity_factor = left_join( 	expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	value = 1 ) ,
+													vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+					
+					# data.frame( vintages, value )
+					construction_time = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 0	),
+					
+					# data.frame( vintages, value )
+					technical_lifetime = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 1	),
+					
+					# data.frame( vintages, value )
+					inv_cost = expand.grid( node = nds,
+											vintage = vtgs,
+											value = 0	),
+					
+					# data.frame( node, vintages, year_all, value )
+					fix_cost = left_join( 	expand.grid( 	node = nds,
+															vintage = vtgs,
+															value = 0	),
+											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
+					
+					# data.frame( node, vintage, year_all, mode, time, value ) 
+					var_cost = NULL,							
+							
+					# data.frame(node,year_all,value)
+					historical_new_capacity = NULL
+
+					)
+					
+# industry_wastewater_treatment
+vtgs = year_all
+nds = bcus
+lft = 25
+vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
+vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
+industry_wastewater_treatment = list( 	nodes = nds,
+					years = year_all,
+					times = time,
+					vintages = vtgs,	
+					types = c('water'),
+					modes = c( 1 ),
+					lifetime = 25,
+					
+					input = bind_rows(  left_join(  expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = c( 1 ), 
+																commodity = 'electricity', 
+																level = 'industry_final',
+																value =  12.5 ) ,
+												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),
+												
+												left_join(  expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = c( 1 ), 
+																commodity = 'wastewater', 
+																level = 'industry_secondary',
+																value =  1 ) ,
+												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
+									
+						),
+						
+					output = bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'freshwater', 
+																	level = 'river_out',
+																	value = 0.9 ) ,
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
+								),	
+
+					# data.frame( node,vintage,year_all,mode,emission) 
+					emission_factor = bind_rows( 	left_join( expand.grid( node = nds,
+																			vintage = vtgs,
+																			mode = 1, 
+																			emission = 'water_consumption', 
+																			value = 0.1 ) ,
+														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value ) 
+						),								
+																							
+																	
+					# data.frame(node,vintage,year_all,time)
+					capacity_factor = left_join( 	expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	value = 0.9 ) ,
+													vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+					
+					# data.frame( vintages, value )
+					construction_time = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 1	),
+					
+					# data.frame( vintages, value )
+					technical_lifetime = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = lft	),
+					
+					# data.frame( vintages, value )
+					inv_cost = expand.grid( node = nds,
+											vintage = vtgs,
+											value = 431	),
+					
+					# data.frame( node, vintages, year_all, value )
+					fix_cost = left_join( 	expand.grid( 	node = nds,
+															vintage = vtgs,
+															value = 37	),
+											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
+					
+					# data.frame( node, vintage, year_all, mode, time, value ) 
+					var_cost = NULL,							
+							
+					# data.frame(node,year_all,value)
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "industry_wastewater_treatment",]
+
+					)					
+					
 # rural_sw_diversion 
 vtgs = year_all
 lft = 15
@@ -9312,7 +9757,7 @@ rural_sw_diversion = list( 	nodes = nds,
 																vintage = vtgs,
 																mode = c( 1 ), 
 																commodity = 'freshwater', 
-																level = 'river_in',
+																level = 'river_div',
 																value =  1 ) ,
 												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -9367,7 +9812,12 @@ rural_sw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,						
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "rural_sw_diversion",]
@@ -9456,7 +9906,12 @@ rural_gw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,		
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "rural_gw_diversion",]
@@ -9937,7 +10392,7 @@ irrigation_sw_diversion = list( 	nodes = nds,
 																vintage = vtgs,
 																mode = c( 1 ), 
 																commodity = 'freshwater', 
-																level = 'river_in',
+																level = 'river_div',
 																value =  1 ) ,
 												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -10003,7 +10458,12 @@ irrigation_sw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,		
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 1	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "irrigation_sw_diversion",]
@@ -10037,7 +10497,7 @@ smart_irrigation_sw_diversion = list( 	nodes = nds,
 																vintage = vtgs,
 																mode = c( 1 ), 
 																commodity = 'freshwater', 
-																level = 'river_in',
+																level = 'river_div',
 																value =  1 ) ,
 												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -10049,7 +10509,7 @@ smart_irrigation_sw_diversion = list( 	nodes = nds,
 																	mode = 1, 
 																	commodity = 'freshwater', 
 																	level = 'irrigation_final',
-																	value = 0.75 + 0.1 ) , # Average losses for canals from Wu et al. World Bank (2013)
+																	value = 0.75 + 0.03 ) , # Average losses for canals from Wu et al. World Bank (2013) + assumed efficiency increase from smart tech
 													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
 										
@@ -10059,7 +10519,7 @@ smart_irrigation_sw_diversion = list( 	nodes = nds,
 																	mode = 1, 
 																	commodity = 'renewable_gw', 
 																	level = 'aquifer',
-																	value = 0.25 - 0.1 ) , # Assumed inverse of the above
+																	value = 0.25 - 0.03 ) , # Assumed inverse of the above
 													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
 								
@@ -10113,7 +10573,12 @@ smart_irrigation_sw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = NULL
@@ -10156,7 +10621,7 @@ irrigation_gw_diversion = list( 	nodes = nds,
 																	mode = 1, 
 																	commodity = 'freshwater', 
 																	level = 'irrigation_final',
-																	value = 1 ) ,
+																	value = 0.95 ) ,
 													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
 								),	
@@ -10199,7 +10664,12 @@ irrigation_gw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,	
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "irrigation_gw_diversion",]
@@ -10293,7 +10763,12 @@ smart_irrigation_gw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,			
+					
+					min_utilization_factor = left_join( expand.grid( 	node = nds,
+					                                                  vintage = vtgs,
+					                                                  value = 0.8	),
+					                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = NULL
@@ -10324,7 +10799,7 @@ energy_sw_diversion = list( 	nodes = nds,
 																vintage = vtgs,
 																mode = c( 1 ), 
 																commodity = 'freshwater', 
-																level = 'river_in',
+																level = 'river_div',
 																value =  1 ) ,
 												vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 												dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -10379,7 +10854,12 @@ energy_sw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,	
+					
+					# min_utilization_factor = left_join( expand.grid( 	node = nds,
+					#                                                   vintage = vtgs,
+					#                                                   value = 0.8	),
+					#                                     vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "energy_sw_diversion",]
@@ -10465,7 +10945,12 @@ energy_gw_diversion = list( 	nodes = nds,
 											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
 					
 					# data.frame( node, vintage, year_all, mode, time, value ) 
-					var_cost = NULL,							
+					var_cost = NULL,		
+					
+					# min_utilization_factor = left_join( expand.grid( 	node = nds,
+					#                                                   vintage = vtgs,
+					#                                                   value = 0.8	),
+					#                                     vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 							
 					# data.frame(node,year_all,value)
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "energy_gw_diversion",]
@@ -10496,7 +10981,7 @@ surface2ground = list( 	nodes = nds,
 																	vintage = vtgs,
 																	mode = c( 1 ), 
 																	commodity = 'freshwater', 
-																	level = 'river',
+																	level = 'river_div',
 																	value =  1 ) ,
 													vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )			
@@ -10558,6 +11043,7 @@ surface2ground = list( 	nodes = nds,
 
 						)
 
+
 # transfer groundwater to suface water - backstop option for meeting flow constraints
 vtgs = year_all
 nds = bcus
@@ -10593,7 +11079,7 @@ ground2surface = list( 	nodes = nds,
 																		vintage = vtgs,
 																		mode = 1, 
 																		commodity = 'freshwater', 
-																		level = 'river',
+																		level = 'river_div',
 																		value = 1 ) ,
 														vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
 														dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
@@ -11505,18 +11991,18 @@ environmental_flow = list( 	nodes = nds,
 																			mode = 1, 
 																			commodity = 'freshwater', 
 																			level = 'river_out',
-																			value = 0.95 ) ,
+																			value = 1 - ( 0.6 * 0.1 ) ) ,
 															vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
 															dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),	
 												
-												left_join(  expand.grid( 	node = nds,
-																			vintage = vtgs,
-																			mode = 1, 
-																			commodity = 'renewable_gw', 
-																			level = 'aquifer',
-																			value = 0.6 * 0.1 ) , # test value of 0.6 base flow index; 0.1 represents 10% baseflow as indicator for renewable GW availability from Gleeson and Richter 2017
-															vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
-															dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )
+												# left_join(  expand.grid( 	node = nds,
+												# 							vintage = vtgs,
+												# 							mode = 1, 
+												# 							commodity = 'renewable_gw', 
+												# 							level = 'aquifer',
+												# 							value = 0.6 * 0.1 ) , # test value of 0.6 base flow index; 0.1 represents 10% baseflow as indicator for renewable GW availability from Gleeson and Richter 2017
+												# 			vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+												# 			dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )
 								),	
 
 							# data.frame( node,vintage,year_all,mode,emission) 
@@ -11561,6 +12047,109 @@ environmental_flow = list( 	nodes = nds,
 
 							)
 
+## Technology to represent internal inflows in the node, move water to the river_in level and assign internal hydropower runoff potential
+vtgs = year_all
+nds = bcus
+initial_nodes = as.character(basin.spdf@data$PID[!basin.spdf@data$PID %in% basin.spdf@data$DOWN])
+tmp = bind_rows( lapply( initial_nodes, function( ii ){ data.frame(node = ii,
+    qnt = quantile( unlist( water_resources.df[ which( water_resources.df$node == ii), 
+                                        grepl( '2015', names(water_resources.df) ) ] ) , 0.75 )
+	) } ) )
+internal_runoff = list( 	nodes = nds,
+                            years = year_all,
+                            times = time,
+                            vintages = vtgs,	
+                            types = c('water'),
+                            modes = c( 1 ),
+                            lifetime = 1,
+                            
+                            input = bind_rows(  left_join(  expand.grid( 	node = nds,
+                                                                          vintage = vtgs,
+                                                                          mode = c( 1 ), 
+                                                                          commodity = 'freshwater', 
+                                                                          level = 'inflow',
+                                                                          value =  1 ) ,
+                                                            vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+                                                  dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )				
+                                                
+                            ),
+                            
+                            output = bind_rows( left_join(  expand.grid( 	node = nds,
+                                                                          vintage = vtgs,
+                                                                          mode = 1, 
+                                                                          commodity = 'freshwater', 
+                                                                          level = 'river_in',
+                                                                          value = 1 ),
+                                                            vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
+                                                  dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ) #,	
+                                                
+                                                # left_join(  expand.grid( 	node = nds,
+                                                                          # vintage = vtgs,
+                                                                          # mode = 1, 
+                                                                          # commodity = 'hydro_potential_river', 
+                                                                          # level = 'energy_secondary' ),
+                                                            # vtg_year_time ) %>% left_join(
+                                                              # water_resources.df %>%
+                                                              # mutate( value = river_mw_per_km3_per_day / 1e3 ) %>%
+                                                              # dplyr::select( node,value )) %>% 
+                                                  # filter(value > 0) %>% 
+                                                  # mutate( node_out = node, time_out = time ) %>% 
+                                                  # dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),
+                                                
+                                                # left_join(  expand.grid( 	node = initial_nodes,
+                                                                          # vintage = vtgs,
+                                                                          # mode = 1, 
+                                                                          # commodity = 'hydro_potential_old', 
+                                                                          # level = 'energy_secondary' ),
+                                                            # vtg_year_time ) %>% left_join(
+                                                              # water_resources.df %>% filter(node %in% initial_nodes) %>% 
+                                                                # left_join(tmp) %>% 
+                                                              # mutate( value =  as.numeric(( existing_MW + planned_MW ) / qnt / 1e3)) %>% 
+                                                              # dplyr::select(node,value) ) %>% 
+                                                  # filter(value > 0) %>% 
+                                                  # mutate( node_out = node, time_out = time ) %>% 
+                                                  # dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )
+                                                
+                            ),	
+                         
+                         
+                            
+                            # data.frame( node,vintage,year_all,mode,emission) 
+                            emission_factor = NULL,								
+                            
+                            
+                            # data.frame(node,vintage,year_all,time)
+                            capacity_factor = left_join( 	expand.grid( 	node = nds,
+                                                                        vintage = vtgs,
+                                                                        value = 1 ) ,
+                                                          vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+                            
+                            # data.frame( vintages, value )
+                            construction_time = expand.grid( 	node = nds,
+                                                              vintage = vtgs,
+                                                              value = 0	),
+                            
+                            # data.frame( vintages, value )
+                            technical_lifetime = expand.grid( 	node = nds,
+                                                               vintage = vtgs,
+                                                               value = 1	),
+                            
+                            # data.frame( vintages, value )
+                            inv_cost = expand.grid( node = nds,
+                                                    vintage = vtgs,
+                                                    value = 0	),
+                            
+                            # data.frame( node, vintages, year_all, value )
+                            fix_cost = NULL, 
+                            
+                            # data.frame( node, vintage, year_all, mode, time, value ) 
+                            var_cost = NULL,							
+                            
+                            # data.frame(node,year_all,value)
+                            historical_new_capacity = NULL
+                            
+)
+
 ## River network - technologies that move surface water between PIDs
 vtgs = year_all
 lft = 1
@@ -11595,9 +12184,11 @@ for( iii in 1:length( basin.spdf ) )
 											level = 'energy_secondary',
 											value =  water_resources.df %>%
 												filter( node == bi ) %>%
-												mutate( value =  as.numeric(( existing_MW + planned_MW ) / quantile( unlist( water_resources.df[ which( water_resources.df$node == bi), grepl( '2015', names(water_resources.df) ) ] ) , 0.75 ) / 1e3 )) %>%
+												mutate( value =  as.numeric(( existing_MW + planned_MW ) / 
+												                              quantile( unlist( water_resources.df[ which( water_resources.df$node == bo), 
+												                                                                    grepl( '2015', names(water_resources.df) ) ] ) , 0.75 ) / 1e3 )) %>%
 												dplyr::select( value ) %>% unlist() ) %>%	
-								mutate( node_out = node, time_out = time, year_all = vintage ) %>%
+								mutate( node_out = bi, time_out = time, year_all = vintage ) %>%
 								dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ),
 								
 							expand.grid( 	node = bi,
@@ -11732,11 +12323,22 @@ for( hhh in c( 'conv', 'lined' ) )
 	
 	# Need to provide option for both directions as invididual investments as opposed to a single investment / bi-directional system - conveyance not typically operated bi-directionally
 	adjacent_routes2 = c( adjacent_routes, paste( unlist( strsplit( adjacent_routes, '[|]' ) )[ seq( 2,2*length(adjacent_routes),by=2 ) ], unlist( strsplit( adjacent_routes, '[|]' ) )[ seq( 1,2*length(adjacent_routes),by=2 ) ], sep = '|'  ) )
-	adjacent_routes2 = setdiff(adjacent_routes2,river_routes)
-	# no cross national routes
-	# adjacent_routes2 = adjacent_routes2[gsub('_.*', '',gsub('.*\\|', '',adjacent_routes2)) == 	gsub('_.*', '',gsub('\\|.*', '',adjacent_routes2))]
 	
+	# # Remove options that are across borders 
+	# adjacent_routes2 = adjacent_routes2[ which( unlist( strsplit( unlist( strsplit( adjacent_routes2, '[|]' ) )[ seq( 1,2*length(adjacent_routes2), by=2 ) ], '_' ) )[ seq( 1,2*length(adjacent_routes2), by=2 ) ] ==
+	# 											unlist( strsplit( unlist( strsplit( adjacent_routes2, '[|]' ) )[ seq( 2,2*length(adjacent_routes2), by=2 ) ], '_' ) )[ seq( 1,2*length(adjacent_routes2), by=2 ) ] ) ]
+	# 
+	# Cost data
+	adjacent_routes2 = setdiff(adjacent_routes2,river_routes)
+	
+	if (!FULL_COOPERATION) {
+	# # Remove options that are across borders
+	adjacent_routes2 = adjacent_routes2[gsub('_.*', '',gsub('.*\\|', '',adjacent_routes2)) == 	gsub('_.*', '',gsub('\\|.*', '',adjacent_routes2))]
+	} else{
+	} # end if
 	can_inv_cost.df = rbind( can_inv_cost.df, can_inv_cost.df %>% mutate( tec = paste( unlist( strsplit( tec, '[|]' ) )[ seq( 2,2*length(tec),by=2 ) ], unlist( strsplit( tec, '[|]' ) )[ seq( 1,2*length(tec),by=2 ) ], sep = '|'  ) ) )
+	
+	# Go through routes
 	for( iii in 1:length(adjacent_routes2) )
 		{
 		
@@ -11841,6 +12443,92 @@ for( hhh in c( 'conv', 'lined' ) )
 	
 	}
 	
+# interbasin canal for tranfers to India potentially missed in irrigation implementation
+# Identified manually as 1) node that transfers water out to India via Indira Ghandhi canal etc.; and 
+# 2) node the contains Keenjhar Lake and 583 MGD link to Karachi for potable water supply
+lft = 1
+vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
+vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
+nds = interbasin_transfer.df$node 
+interbasin_canal = list( 	nodes = nds,
+							years = year_all,
+							times = time,
+							vintages = vtgs,	
+							types = c('water'),
+							modes = c( 1 ),
+							lifetime = 1,
+					
+					input = bind_rows( left_join(  expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	mode = 1, 
+																	commodity = 'freshwater', 
+																	level = 'river_in',
+																	value = 1 ) ,
+													vtg_year_time ) %>% mutate( node_in = node, time_in = time ) %>% 
+													dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value )	
+								),
+						
+					output = NULL, # transferred outside the basin
+					
+					# data.frame( node,vintage,year_all,mode,emission) 
+					emission_factor = left_join( expand.grid( 	node = nds,
+																vintage = vtgs,
+																mode = 1, 
+																emission = 'water_consumption', 
+																value = 1 ) ,
+														vtg_year ) %>% dplyr::select( node,  vintage, year_all, mode, emission, value ),								
+																							
+																	
+					# data.frame(node,vintage,year_all,time)
+					capacity_factor = left_join( 	expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	value = 1 ) ,
+													vtg_year_time ) %>% dplyr::select( node,  vintage, year_all, time, value ),
+					
+					# data.frame( vintages, value )
+					construction_time = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = 1	),
+					
+					# data.frame( vintages, value )
+					technical_lifetime = expand.grid( 	node = nds,
+														vintage = vtgs,
+														value = lft	),
+					
+					# data.frame( vintages, value )
+					inv_cost = expand.grid( node = nds,
+											vintage = vtgs,
+											value = 1	), # test w/ small penalty 
+					
+					# data.frame( node, vintages, year_all, value )
+					fix_cost = left_join( 	expand.grid( 	node = nds,
+															vintage = vtgs,
+															value = 0	),
+											vtg_year ) %>% dplyr::select( node, vintage, year_all, value ), 
+					
+					# data.frame( node, vintage, year_all, mode, time, value ) 
+					var_cost = NULL,							
+							
+					# data.frame(node,year_all,value)
+					historical_new_capacity = NULL,
+					
+					# data.frame(node,year_all,value)
+					bound_total_capacity_lo = bind_rows( lapply( nds, function( nnn ){
+						expand.grid( 	node = nnn, 
+										year_all = year_all[ year_all>baseyear ], 
+										value = unlist( interbasin_transfer.df[nnn,'min_flow'] )	)
+						} ) ),
+					
+					bound_activity_lo = bind_rows( lapply( nds, function( nnn ) { 
+						expand.grid( 	node = nnn, 
+										year_all = year_all, 
+										mode = 1,
+										time = as.character( time ), 
+										value = unlist( interbasin_transfer.df[nnn,'min_flow'] ) * 0.95 ) 
+						} ) )			
+						
+					)	
+	
 #------------
 # CROPS and irrigation technologies
 
@@ -11852,28 +12540,37 @@ crp = crop_names
 
 machinery_ei_kwh_per_kg = 0.13 # energy in per unit of crop production - Average from Rao et al. (2018)
 irrigation_tecs = unique( irr_tech_data.df$irr_tech )
-field_efficiency_conv = 0.85
-gwp_ch4 = unlist(gwp.df$CH4)
+# Define average efficiency for water once it reaches the farm-gate 
+# Assuming all irrigation is basically flood irrigation based on disucssions with stakeholders
+# Also aligns closely with asssumptions in Wu et al. (2013, World Bank) figure 5.4 
+field_efficiency = 0.85
+water_course_efficiency = 0.55 # these numbers need to match the efficiencies used for calibration in crop_yields.r so perhaps good to explicility link later
+field_efficiency_conv = field_efficiency * water_course_efficiency
+gwp_ch4 = gwp.df$gwp[gwp.df$emission == 'CH4']
 crop_ch4 = data.frame( crop = 'rice',  value = 1300 ) # default IPCC CH4 emission factor converted to metric tons per Mha per day
 crop_tech_names = NULL
 rainfed_crop_names = NULL
 irr_tech_names = NULL
+residue_data.d = residue_data %>% bind_rows(
+	data.frame(crop = c('fruit','vegetables'), res_yield = c(0,0) , mode = c(8,9), liquid = c(0,0),
+    ethanol_ratio = c(NA,NA), var_eth_cost = c(NA,NA)  ,stringsAsFactors = F)
+	)
 for( ii in seq_along( crop_names ) )
 	{
-	
 	vtgs = year_all
 	nds = bcus
 	crop_tech_name = paste0('crop_',crop_names[ii])
 	crop_tech_names = c( crop_tech_names, crop_tech_name )
 	
-	lft = 15
+	lft = 1
 	vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 	vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
 	node_mode_vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( node = bcus, mode = 1, vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) )
+	growing_season = crop_tech_data.df %>% filter(crop == crop_names[ii] & par == 'crop_coef') %>% filter( value > 0 ) %>% select( time ) %>% unlist()
+	vtg_year_time = vtg_year_time %>% filter( time %in% growing_season )
 	
-	tmp = crop_input_data.df %>% filter(crop == crop_names[ii] & par == 'rain-fed_yield') %>% 
-    dplyr::select(node,value)
-	tmp = tmp %>% expand(tmp,time) %>% 
+	tmp = crop_input_data.df %>% filter(crop == crop_names[ii] & par == 'rain-fed_yield') %>% dplyr::select(node,value)
+	tmp = tmp %>% expand(tmp,time) %>% filter( time %in% growing_season ) %>%
     left_join(crop_tech_data.df %>% 
                 filter(crop == crop_names[ii] & par == 'crop_coef') %>% 
                 rename(ccf = value) %>% 
@@ -11881,14 +12578,14 @@ for( ii in seq_along( crop_names ) )
     mutate(value = value * ccf ) %>%  #kton/Mha
     filter(!is.na(value)) %>% 
     mutate(commodity = paste0(crop_names[ii],'_yield'))
-  
+
 	tlst = list(nodes = nds,
 				years = year_all,
-				times = time,
+				times = growing_season,
 				vintages = vtgs,	
 				types = c('land'),
 				modes = c( 1 ),
-				lifetime = lft,
+				lifetime = 1,
 				
 				input =  left_join( tmp %>% expand(tmp, level = c('agriculture_final'), vintage = vtgs ) %>% # on-farm energy requirements for machinery
 									mutate( mode = 1, time_in = time, node_in = node, commodity = 'energy' ) %>%
@@ -11903,35 +12600,27 @@ for( ii in seq_along( crop_names ) )
 											vintage = vtgs,
 											level = 'crop', 
 											mode = 1, 
-											value = 1 ), 
+											value = 1 ),  # crop area in Mha
 						vtg_year_time )	%>%	mutate( node_out = node, time_out = time ) %>% 
-						dplyr::select(  node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ) ,
-                    
-					 # for the next df the time_output is yearly (annual yield demand)
-                    left_join( tmp %>% expand(tmp, level = c('raw','residue'), vintage = vtgs ) %>% 
-									mutate(mode = 1, time = time) %>% 
-									mutate(time_out = if_else(level == 'raw','year',time)) %>% 
-									mutate(node_out = if_else(level == 'raw',gsub('_.*','',node) ,node)) %>%
-									mutate(value = if_else(value == 0 , value, if_else(level == 'residue', ( residue_data$res_yield[ residue_data$crop == crop_names[ii] ] ) *ccf , value ) ) ),
-								vtg_year ) %>% 
-									dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )
+						dplyr::select(  node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ) 
 					
 					),
 	
 				# data.frame( node,vintage,year_all,mode,emission) 
-				emission_factor = rbind( left_join( fertilizer_emissions.df %>% filter( crop == crop_names[ii] ) %>%
+				emission_factor = 
+				  rbind( left_join( fertilizer_emissions.df %>% filter( crop == crop_names[ii] ) %>%
 						filter( if( length( which( irrigation == 'rainfed' ) ) == 0 ) irrigation == 'irrigated' else irrigation == 'rainfed' ) %>%
 						group_by( PID, crop, emission ) %>% # 0.8 reflects that about 80% farmers using fertilizers at recommended rates
 						summarise( value = round( sum ( value ) * 1 / 365 * 1 / 1e3 * 1e6 / 1 * 0.8, digits = 3 ) ) %>% # convert from kg per year per hectare to metric tons per day per Mha
 						ungroup() %>% data.frame() %>%
 						rename( node = PID ),
 					node_mode_vtg_year ) %>%
-					select( node, vintage, year_all, mode, emission, value ), # add methane emissions 
-					left_join( 	node_mode_vtg_year, 
-								rbind( 	expand.grid( node = bcus, emission = 'CH4', value = max( 0, unlist( crop_ch4 %>% filter(crop==crop_names[ii]) %>% select(value) ), na.rm=TRUE ) ), 
-										expand.grid( node = bcus, emission = 'CO2eq', value = max( 0, unlist( crop_ch4 %>% filter(crop==crop_names[ii]) %>% select(value) ), na.rm=TRUE ) * gwp_ch4 ) ) ) ) %>% 
+					select( node, vintage, year_all, mode, emission, value ), # add methane emissions
+					left_join( 	node_mode_vtg_year,
+								rbind( 	expand.grid( node = bcus, emission = 'CH4', value = max( 0, unlist( crop_ch4 %>% filter(crop==crop_names[ii]) %>% select(value) ), na.rm=TRUE ) ),
+										expand.grid( node = bcus, emission = 'CO2eq', value = max( 0, unlist( crop_ch4 %>% filter(crop==crop_names[ii]) %>% select(value) ), na.rm=TRUE ) * gwp_ch4 ) ) ) ) %>%
 					group_by( node, vintage, year_all, mode, emission ) %>% summarise( value = round( sum(value), digits = 3 ) ) %>%
-					ungroup() %>% data.frame(),						
+					ungroup() %>% data.frame(),
 																																		
 				# data.frame(node,vintage,year_all,time)
 				capacity_factor = left_join( 	expand.grid( 	node = nds,
@@ -11974,37 +12663,56 @@ for( ii in seq_along( crop_names ) )
 															filter( crop == crop_names[ii], par == 'var_cost' ) %>% 
 															dplyr::select( value ) %>% 
 															unlist() ), 
-										vtg_year_time ) %>% dplyr::select( node, vintage, year_all, mode, time, value )	,						
+										vtg_year_time ) %>% dplyr::select( node, vintage, year_all, mode, time, value )	,	
+				
+				min_utilization_factor = left_join( expand.grid( 	node = nds,
+				                                                  vintage = vtgs,
+				                                                  value = 0	),
+				                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 						
 				# data.frame(node,year_all,value)
-				historical_new_capacity = hist_new_cap.df[ hist_new_cap.df$tec == paste0( 'crop_', crop_names[ii] ), ]
 				
-											# expand.grid(node = nds, year_all = 2020) %>%
-										  # left_join(	crop_input_data.df %>%
-										  # filter(crop == crop_names[ii] & par == 'crop_land_2015') %>%
-										  # mutate(crop = crop_tech_name, value = value ) %>%
-										  # dplyr::rename( tec = crop ) ) %>%
-										  # dplyr::select(node,tec,year_all,value)
+				historical_new_capacity = 
+				
+										expand.grid(node = nds, year_all = c(2015) ) %>%
+										left_join(	crop_input_data.df %>%
+										filter(crop == crop_names[ii] & par %in% c('crop_irr_land_2015','crop_rainfed_land_2015') ) %>%
+										mutate(crop = crop_tech_name, value = value ) %>%
+										dplyr::rename( tec = crop ) ) %>%
+				            group_by(node,tec,year_all) %>% 
+				            summarise(value = sum(value)) %>% ungroup() %>% 
+										dplyr::select(node,tec,year_all,value)
 						
 				)
+				
 					
 	assign( crop_tech_name, tlst )
   
-	# rain-fed crops, will have particular parametrization, like yeld,
+	# rain-fed crops, will have particular parametrization, like yield,
 	# for now we keep it separated from other irrigation technologies
-	lft = 5
-	vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
-	vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
-
+	
 	rainfed_crop_name = paste0('rainfed_',crop_names[ii])
-	rainfed_crop_names = c(rainfed_crop_names, rainfed_crop_name  )
+	rainfed_crop_names = c( rainfed_crop_names, rainfed_crop_name  )
+
+	tmp = crop_input_data.df %>% filter(crop == crop_names[ii] & par == 'rain-fed_yield') %>% dplyr::select(node,value)
+	tmp = tmp %>% expand(tmp,time) %>% filter( time %in% growing_season ) %>%
+    left_join(crop_tech_data.df %>% 
+                filter(crop == crop_names[ii] & par == 'crop_coef') %>% 
+                rename(ccf = value) %>% 
+                dplyr::select(time,ccf) ) %>%     #from yearly yield to monthly and scaled with crop coefficient
+    mutate(value = value * ccf ) %>%  #kton/Mha
+    filter(!is.na(value)) %>% 
+    mutate(commodity = paste0(crop_names[ii],'_yield'))
+	
+	nds = unique((tmp %>% filter(value > 0))$node)
+		
 	tlst = list(nodes = nds,
 				years = year_all,
-				times = time,
+				times = growing_season,
 				vintages = vtgs,	
 				types = c('land'),
 				modes = c( 1 ),
-				lifetime = lft,
+				lifetime = 1,
 				
 				input = left_join( expand.grid( node = nds,
 											commodity = paste0(crop_names[ii],'_land'), 
@@ -12023,8 +12731,17 @@ for( ii in seq_along( crop_names ) )
 											level = 'area', 
 											mode = 1, 
 											value = 1 ), 
-						vtg_year_time )	%>%	mutate( node_out = node, time_out = 'year' ) %>% 
-						dplyr::select(  node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )  
+						vtg_year_time )	%>%	mutate( node_out = node, time_out = as.character(time) ) %>% 
+						dplyr::select(  node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ) ,
+
+					 # for the next df the time_output is yearly (annual yield demand)
+                    left_join( tmp %>% expand(tmp, level = c('raw','residue'), vintage = vtgs ) %>% 
+									mutate(mode = 1, time = time) %>% 
+									mutate(time_out = if_else(level == 'raw','year',time)) %>% 
+									mutate(node_out = node) %>%
+									mutate(value = if_else(value == 0 , value, if_else(level == 'residue', ( residue_data.d$res_yield[ residue_data.d$crop == crop_names[ii] ] ) *ccf , value ) ) ),
+								vtg_year ) %>% filter( time %in% growing_season ) %>%
+									dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )
 					
 					),
 	
@@ -12063,10 +12780,20 @@ for( ii in seq_along( crop_names ) )
 														mode = 1,
 														vintage = vtgs,
 														value = 0), 
-										vtg_year_time ) %>% dplyr::select( node, vintage, year_all, mode, time, value ),							
+										vtg_year_time ) %>% dplyr::select( node, vintage, year_all, mode, time, value ),	
+				
+				min_utilization_factor = left_join( expand.grid( 	node = nds,
+																	vintage = vtgs,
+																	value = 0	),
+				                                    vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),	
 						
 				# data.frame(node,year_all,value)
-				historical_new_capacity = NULL
+				historical_new_capacity =  expand.grid(node = nds, year_all = c(2015) ) %>%
+				  left_join( crop_input_data.df %>%
+				               dplyr::filter(crop == crop_names[ii] & par == 'crop_rainfed_land_2015') %>%
+				               mutate( crop = rainfed_crop_name, value = round( value, digits = 5 ) ) %>%
+				               dplyr::rename( tec = crop )
+				  ) %>% dplyr::select(node,tec,year_all,value)
 						
 				)
 				
@@ -12074,14 +12801,14 @@ for( ii in seq_along( crop_names ) )
   
 	for (jj in seq_along(irrigation_tecs)){
 		
-		lft = 15
-		vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
-		vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
-
 		irr_tech_name = paste0(irrigation_tecs[jj],'_',crop_names[ii])
 		irr_tech_names = c( irr_tech_names, irr_tech_name)
-		tmp = crop_input_data.df %>% filter(crop == crop_names[ii] & par == 'irrigation_yield') %>% 
-			dplyr::select(node,value)
+		tmp = crop_input_data.df %>% filter(crop == crop_names[ii]) %>% 
+		  spread(par,value) %>% 
+		  mutate(irrigation_yield = if_else(is.na(irrigation_yield),0,irrigation_yield),
+		         `rain-fed_yield` = if_else(is.na(`rain-fed_yield` ),0,`rain-fed_yield` ) ) %>% 
+		  mutate(value = irrigation_yield) %>% 
+		  dplyr::select(node,value)
 		tmp = tmp %>% expand(tmp,time) %>% 
 			left_join(	crop_tech_data.df %>% 
 						filter(crop == crop_names[ii] & par == 'crop_coef') %>% 
@@ -12090,14 +12817,28 @@ for( ii in seq_along( crop_names ) )
 			mutate(value = value * ccf) %>%  #kton/Mha
 			dplyr::filter(!is.na(value)) %>% 
 			mutate(commodity = paste0(crop_names[ii],'_yield'))
+		
+		if (grepl('irr_flood_',irr_tech_name)){
+		  tmp_hist_new_cap =  expand.grid(node = nds, year_all = c(2015) ) %>%
+		    left_join( crop_input_data.df %>%
+		                 dplyr::filter(crop == crop_names[ii] & par == 'crop_irr_land_2015') %>%
+		                 mutate( crop = irr_tech_name, value = round( value, digits = 5 ) ) %>%
+		                 dplyr::rename( tec = crop )
+		    ) %>% dplyr::select(node,tec,year_all,value)
+		} else {
+		  tmp_hist_new_cap =  NULL
+		}
+		
+		nds = unique((tmp %>% filter(value > 0))$node)
+		nds = nds[nds %in% unique((crop_water.df %>% filter(crop == crop_names[ii]))$node)]
     
 		tlst = list( 	nodes = nds,
 						years = year_all,
-						times = time,
+						times = growing_season,
 						vintages = vtgs,	
 						types = c('land'),
 						modes = 1,
-						lifetime = lft,
+						lifetime = 9,
 							
 						input = bind_rows(  left_join(  
 												expand.grid( 	node = nds,
@@ -12110,7 +12851,9 @@ for( ii in seq_along( crop_names ) )
 													mutate( node_in = node, time_in = time ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ),
 													
-											# crop water requirement scaled to represent water taken from irrigation diversions
+											# crop water requirement scaled to represent water taken from irrigation diversions 
+											# need to divide by the field efficiency multiplied by the efficiency of the irrigation tech to estimate water requirement at the crop-level
+											# Note that additional efficiency losses are accounted for in 'irrigation_sw_diversion', to account for the distribution losses
 											left_join( crop_water.df %>% filter(crop == crop_names[ii]) %>% 
 													dplyr::rename( year_all = year ) %>%
 													mutate( value = ( 1 / unlist( 	irr_tech_data.df %>% 
@@ -12138,10 +12881,10 @@ for( ii in seq_along( crop_names ) )
 													dplyr::select( node,  vintage, year_all, mode, node_in, commodity, level, time, time_in, value ) %>%
 													mutate( value = value * irr_tech_data.df %>% # multiply water use per area by electricity use per water to get electricity per activity
 																				filter( irr_tech == irrigation_tecs[jj], par == 'electricity_intensity' ) %>% 
-																				select( value ) %>% unlist( . ) ) %>% # *1000 to make MWh/Mha , water is in MCM
+																				select( value ) %>% unlist( . ) ) %>% 
 																				mutate( value = round( value, digits = 3 ) )
 																				
-									), 
+									) %>% filter(node %in% nds), 
 											
 						output = bind_rows( left_join(  expand.grid( 	node = nds,
 																		vintage = vtgs,
@@ -12149,16 +12892,16 @@ for( ii in seq_along( crop_names ) )
 																		commodity = 'crop_land', 
 																		level = 'area',
 																		value = 1 ) ,
-													vtg_year_time ) %>% mutate( node_out = node, time_out = 'year' ) %>% 
+													vtg_year_time ) %>% mutate( node_out = node, time_out = as.character(time) ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )	,
 													
 													# for the next df the time_output is yearly (annual yield demand)
 													left_join( tmp %>% expand(tmp, level = c('raw','residue'), vintage = vtgs ) %>% 
 																	mutate(mode = 1, time = time) %>% 
 																	mutate(time_out = if_else(level == 'raw','year',time)) %>% 
-																	mutate(node_out = if_else(level == 'raw',gsub('_.*','',node) ,node)) %>%
-																	mutate(value = if_else(value == 0 , value, if_else(level == 'residue', ( residue_data$res_yield[ residue_data$crop == crop_names[ii] ] ) *ccf , value ) ) ),
-																vtg_year ) %>% 
+																	mutate(node_out = node) %>%
+																	mutate(value = if_else(value == 0 , value, if_else(level == 'residue', ( residue_data.d$res_yield[ residue_data.d$crop == crop_names[ii] ] ) *ccf , value ) ) ),
+																vtg_year ) %>% filter( time %in% growing_season ) %>% 
 																	dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value ) ,
 													
 													# irrigation losses contribute to groundwater recharge		
@@ -12192,7 +12935,7 @@ for( ii in seq_along( crop_names ) )
 																			
 													
 									
-									),	
+									) %>% filter(node %in% nds),	
 
 						# data.frame( node,vintage,year_all,mode,emission) - difference between the irrigated and rain fed to avoid doible counting
 						emission_factor = right_join(
@@ -12211,7 +12954,7 @@ for( ii in seq_along( crop_names ) )
 							select( node, vintage, year_all, mode, emission, value ) ) %>%
 								mutate( value2 = ifelse( is.na(value2), 0, value2 ) ) %>%
 								mutate( value = round( value-value2 , digits = 3 ) ) %>%
-								select( node, vintage, year_all, mode, emission, value ),										
+								select( node, vintage, year_all, mode, emission, value ),
 																		
 						# data.frame(node,vintage,year_all,time)
 						capacity_factor = left_join( 	expand.grid( 	node = nds,
@@ -12253,35 +12996,27 @@ for( ii in seq_along( crop_names ) )
 																	select( value ) %>% unlist() ),
 												vtg_year_time ) %>% dplyr::select( node, vintage, year_all, mode, time, value ),
 												
-																
-						# data.frame(node,vintage,year_all,value)
 						min_utilization_factor = left_join( expand.grid( 	node = nds,
 																			vintage = vtgs,
 																			value = 0	),
 															vtg_year ) %>% dplyr::select( node, vintage, year_all, value ) ,
 						
 						# data.frame(node,year_all,value)
-						historical_new_capacity = hist_new_cap.df[ hist_new_cap.df$tec == irr_tech_name, ]
 						
-												# expand.grid(node = nds, year_all = 2020) %>%
-                          						# left_join(
-                          						# crop_input_data.df %>%
-                          						# dplyr::filter(crop == crop_names[ii] & par == 'crop_land_2015') %>%
-                          						# mutate( crop = irr_tech_name, value = round( value, digits = 5 ) ) %>%
-                          						# dplyr::rename( tec = crop )
-                          						# ) %>% dplyr::select(node,tec,year_all,value)
-								
+						historical_new_capacity =  tmp_hist_new_cap
 			)
 	
 		assign( irr_tech_name, tlst )
     
 		}
+	
 	}
 
 # fellow crops, do not consume of produce anything, no costs, just consume land,
 # it is required to not necessarily use all the available land and still having
 # a full commodity balance
 vtgs = year_all
+nds = bcus
 lft = 1
 vtg_year = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ] ) } ) ) 
 vtg_year_time = bind_rows( lapply( vtgs, function( vv ){ expand.grid( vintage = vv, year_all = year_all[ year_all %in% vv:(vv+lft) ], time = time )  } ) ) 
@@ -12301,7 +13036,7 @@ fallow_crop	 = list( 	nodes = nds,
 																		commodity = 'crop_land', 
 																		level = 'area',
 																		value = 1 ) ,
-													vtg_year_time ) %>% mutate( node_out = node, time_out = 'year' ) %>% 
+													vtg_year_time ) %>% mutate( node_out = node, time_out = time ) %>% 
 													dplyr::select( node,  vintage, year_all, mode, node_out, commodity, level, time, time_out, value )	
 										
 									),	
@@ -12557,7 +13292,10 @@ ethanol_prod = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "ethanol_prod",]
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "ethanol_prod",],
+					
+					# bound_new_capacity_up(node,inv_tec,year)
+					bound_total_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1	)
 
 					)			
 
@@ -12653,7 +13391,10 @@ ethanol_genset = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "ethanol_genset",]
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "ethanol_genset",],
+					
+					# bound_total_capacity_up(node,inv_tec,year)
+					bound_total_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1	)
 
 					)
 					
@@ -12741,7 +13482,10 @@ ethanol_agri_genset = list( 	nodes = nds,
 														vtg_year ) %>% dplyr::select( node, vintage, year_all, value ),
 					
 					# data.frame(node,year_all,value)
-					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "ethanol_agri_genset",]
+					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "ethanol_agri_genset",],
+					
+					# bound_new_capacity_up(node,inv_tec,year)
+					bound_total_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1	)
 
 					)					
 				

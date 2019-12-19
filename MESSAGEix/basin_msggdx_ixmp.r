@@ -70,6 +70,7 @@ par_list = list(	bound_activity_lo = bound_activity_lo.par,
                  var_cost = var_cost.par ,
                  # for share of renewables
                  share_commodity_lo = share_commodity_lo.par
+				 share_commodity_up = share_commodity_up.par
 ) 
 
 nms = names( par_list )						

@@ -22,8 +22,8 @@ files = c( 	'delineation',
 			'water_table_depth',
 			'freshwater_extraction',
 			'water_resources',
-			'crop_yields',
-			'land_use_maps'
+			'land_use_maps',
+			'crop_yields'
 			)
 
 res = lapply( files, function( fl ){

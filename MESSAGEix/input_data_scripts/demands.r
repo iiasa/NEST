@@ -1,5 +1,5 @@
 
-require(dplyr)
+require(tidyverse)
 require(ncdf4)
 require(rgdal)
 require(raster)
@@ -9,7 +9,7 @@ require(rasterVis)
 require(countrycode)
 memory.limit(size=1e9)
 
-ssps= c('SSP1','SSP2','SSP3','SSP4','SSP5')
+ssps= c( 'SSP1', 'SSP2', 'SSP3', 'SSP4', 'SSP5' )
 n_days = c(31,28,31,30,31,30,31,31,30,31,30,31)
 
 
@@ -24,57 +24,68 @@ basin.spdf@data$PID = as.character( basin.spdf@data$PID )
 basin.spdf@data$CNTRY_ID = unlist( strsplit( basin.spdf@data$PID, '_' ) )[ seq(1,2*length(basin.spdf),by=2) ]
 basin.sp = gUnaryUnion( basin.spdf )
 basin.sp = SpatialPolygons(list(Polygons(Filter(function(f){f@ringDir==1},basin.sp@polygons[[1]]@Polygons),ID=1)))
-buff.sp = gBuffer( basin.sp, width=0.1 ) 
-buff2.sp = gBuffer( basin.sp, width=10 ) 
+buff.sp = gBuffer( basin.sp, width = 0.1 ) 
+buff2.sp = gBuffer( basin.sp, width = 10 ) 
 proj4string(basin.sp) = proj4string(basin.spdf)
 proj4string(buff.sp) = proj4string(basin.spdf)
 proj4string(buff2.sp) = proj4string(basin.spdf)
 		
-## Electricity demands
-
+## Electricity demand models from historical national data
+graphics.off()
 national.list = lapply( c('PAK','IND'), function(CNT){
 	
-	# Import Pakistan historical data
+	# Import historical socioeconomic and electricity data for estimating national model
 	iea_wbi_population_gdp_2000to2015 = data.frame(read.csv(paste("input/",CNT,"_iea_wbi_population_gdp_2000to2015.csv",sep=""), header=TRUE, sep=",", stringsAsFactors=F, as.is=T))
 	iea_electricity_consumption_2000to2015_by_sector_gwh = data.frame(read.csv(paste("input/",CNT,"_iea_electricity_consumption_2000to2015_by_sector_gwh.csv",sep=""), header=TRUE, sep=",", stringsAsFactors=F, as.is=T))
 
 	# National SSP data
-	national_population.df = data.frame(read.csv("input/OECD_SSP_POP.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) # in millions
-	national_population.df = 1e6 * national_population.df[ national_population.df$Region == CNT, c(paste('X',seq(2015,2060,by=5),sep='')) ]
+	national_population.df = data.frame(read.csv("input/OECD_SSP_POP.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) %>% # in millions
+		filter( Region == CNT ) %>% dplyr::select( paste('X',seq(2015,2060,by=5),sep='') ) * 1e6
+		
+	# Fill in missing years	
 	national_population.df = data.frame( do.call( rbind, lapply( 1:nrow(national_population.df), function(j){ unlist(spline( seq(2015,2060,by=5), c(national_population.df[j,]) , n =2060-2015+1, method = 'fmm' )$y ) } ) ) )
 	names(national_population.df) = as.character(seq(2015,2060,by=1))
 	row.names(national_population.df) = ssps
-	national_population.df[2:5,'2015'] = national_population.df[1,'2015']
-	national_population.df[2:5,'2016'] = national_population.df[1,'2016']
-	national_population.df[2:5,'2017'] = national_population.df[1,'2017']
-	national_gdp.df = data.frame(read.csv("input/OECD_SSP_GDP_PPP.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) # in billions
-	national_gdp.df = 1e9 * national_gdp.df[ national_gdp.df$Region == CNT, c(paste('X',seq(2015,2060,by=5),sep='')) ]
+	
+	# make sure same start point
+	for( yyy in as.character( 2015:2018 ) ){ national_population.df[ 2:5, yyy ] = national_population.df[1, yyy ] }
+	
+	# now for the gdp
+	national_gdp.df = data.frame(read.csv("input/OECD_SSP_GDP_PPP.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) %>% # in billions
+		filter( Region == CNT ) %>% dplyr::select( paste('X',seq(2015,2060,by=5),sep='') ) * 1e9
+	
+	# Fill in missing years	
 	national_gdp.df = data.frame( do.call( rbind, lapply( 1:nrow(national_gdp.df), function(j){ unlist(spline( seq(2015,2060,by=5), c(national_gdp.df[j,]) , n =2060-2015+1, method = 'fmm' )$y ) } ) ) )
 	names(national_gdp.df) = as.character(seq(2015,2060,by=1))
 	row.names(national_gdp.df) = ssps
-	national_gdp.df[2:5,'2015'] = national_gdp.df[1,'2015']
-	national_gdp.df[2:5,'2016'] = national_gdp.df[1,'2016']
-	national_gdp.df[2:5,'2017'] = national_gdp.df[1,'2017']
-	national_urbanization.df = data.frame(read.csv("input/NCAR_SSP_Urban_Population_Share.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) # in percent
-	national_urbanization.df = 0.01 * national_urbanization.df[ national_urbanization.df$Region == CNT, c(paste('X',seq(2015,2060,by=5),sep='')) ]
+	
+	# make sure same start point
+	for( yyy in as.character( 2015:2018 ) ){ national_gdp.df[ 2:5, yyy ] = national_gdp.df[1, yyy ] }
+	
+	# now urbanization
+	national_urbanization.df = data.frame(read.csv("input/NCAR_SSP_Urban_Population_Share.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) %>% # in percent
+		filter( Region == CNT ) %>% dplyr::select( paste('X',seq(2015,2060,by=5),sep='') ) * 0.01
 	national_urbanization.df = data.frame( do.call( rbind, lapply( 1:nrow(national_urbanization.df), function(j){ unlist(spline( seq(2015,2060,by=5), c(national_urbanization.df[j,]) , n =2060-2015+1, method = 'fmm' )$y ) } ) ) )
 	names(national_urbanization.df) = as.character(seq(2015,2060,by=1))
 	row.names(national_urbanization.df) = ssps
-	national_urbanization.df[2:5,'2015'] = national_urbanization.df[1,'2015']
-	national_urbanization.df[2:5,'2016'] = national_urbanization.df[1,'2016']
-	national_urbanization.df[2:5,'2017'] = national_urbanization.df[1,'2017']
+	
+	# make sure same start point
+	for( yyy in as.character( 2015:2018 ) ){ national_urbanization.df[ 2:5, yyy ] = national_urbanization.df[1, yyy ] }
+		
+	# Per capita income
 	national_income.df = national_gdp.df / national_population.df
-
+	
 	# Calibrate historical data to match scale of ssps 
 	iea_wbi_population_gdp_2000to2015$pop = iea_wbi_population_gdp_2000to2015$pop * ( national_population.df[1,'2015'] / iea_wbi_population_gdp_2000to2015$pop[nrow(iea_wbi_population_gdp_2000to2015)] )
 	iea_wbi_population_gdp_2000to2015$gdp = iea_wbi_population_gdp_2000to2015$gdp * ( national_gdp.df[1,'2015'] / iea_wbi_population_gdp_2000to2015$gdp[nrow(iea_wbi_population_gdp_2000to2015)] )
 	iea_wbi_population_gdp_2000to2015$inc = iea_wbi_population_gdp_2000to2015$inc * ( national_income.df[1,'2015'] / iea_wbi_population_gdp_2000to2015$inc[nrow(iea_wbi_population_gdp_2000to2015)] )
-
-	## Estimate models
-
+	
+	## Estimate models - using most recent years to capture recent accelerated growth rates
+	
 	# Residential
-	x = iea_wbi_population_gdp_2000to2015$inc[10:16]
-	y = 1e6 * iea_electricity_consumption_2000to2015_by_sector_gwh$Residential[10:16] / iea_wbi_population_gdp_2000to2015$pop[10:16]
+	inds = 10:16 # years to include
+	x = iea_wbi_population_gdp_2000to2015$inc[inds]
+	y = 1e6 * iea_electricity_consumption_2000to2015_by_sector_gwh$Residential[inds] / iea_wbi_population_gdp_2000to2015$pop[inds]
 	r = lm( log(y) ~ log(x) )
 	res.a = unlist( coef(r)[1] )
 	res.b = unlist( coef(r)[2] )
@@ -83,10 +94,10 @@ national.list = lapply( c('PAK','IND'), function(CNT){
 	plot(x,y,main=paste(CNT,' - Residential',sep=''),xlab='per capita income [USD]',ylab='per capita consumption [kWh]',pch=21)
 	points(x,yi,pch=18)
 	legend('bottomright',legend = c('data','model'),pch =c(21,18))
-
+	
 	# Commercial
-	x = iea_wbi_population_gdp_2000to2015$inc[10:16]
-	y = 1e6 * iea_electricity_consumption_2000to2015_by_sector_gwh$Commercial[10:16] / iea_wbi_population_gdp_2000to2015$pop[10:16]
+	x = iea_wbi_population_gdp_2000to2015$inc[inds]
+	y = 1e6 * iea_electricity_consumption_2000to2015_by_sector_gwh$Commercial[inds] / iea_wbi_population_gdp_2000to2015$pop[inds]
 	r = lm( log(y) ~ log(x) )
 	com.a = unlist( coef(r)[1] )
 	com.b = unlist( coef(r)[2] )
@@ -97,8 +108,8 @@ national.list = lapply( c('PAK','IND'), function(CNT){
 	legend('bottomright',legend = c('data','model'),pch =c(21,18))
 
 	# Industry
-	x = iea_wbi_population_gdp_2000to2015$gdp[10:16]
-	y = iea_electricity_consumption_2000to2015_by_sector_gwh$Industry[10:16]
+	x = iea_wbi_population_gdp_2000to2015$gdp[inds]
+	y = iea_electricity_consumption_2000to2015_by_sector_gwh$Industry[inds]
 	r = lm( log(y) ~ log(x) )
 	ind.a = unlist( coef(r)[1] )
 	ind.b = unlist( coef(r)[2] )
@@ -108,23 +119,37 @@ national.list = lapply( c('PAK','IND'), function(CNT){
 	points(x,yi,pch=18)
 	legend('bottomright',legend = c('data','model'),pch =c(21,18))
 
-	## Future demands
-
+	## Future demands - use the models to project forward
 	dat	= iea_electricity_consumption_2000to2015_by_sector_gwh$Residential[16]
 	mod = national_population.df * ( exp( res.a + res.b * log( national_income.df ) ) ) / 1e6
 	lambda = log(0.1) / length(seq(2015,2060,by=1))
-	eff = data.frame( do.call( rbind, lapply( c(-1.5,-2.5,0,-1,-3)/100, function(iii){ ( 1 - iii )^( 1:length(seq(2015,2060,by=1)) ) } ) ) )
+	
+	iiii = c( 1:length(seq(2015,2030,by=1)), seq(length(seq(2015,2030,by=1)), 30.75, by=0.5 ) )
+	if( CNT == 'PAK' )
+		{
+		eff_res = data.frame( do.call( rbind, lapply( c(-4.5,-4.5,-4,-4.5, -4.5 )/100, function(iii){ ( 1 - iii )^( iiii ) } ) ) )
+		eff_ind = data.frame( do.call( rbind, lapply( c(-4.5,-4.5,0,-4.5, -4.5 )/100, function(iii){ ( 1 - iii )^( iiii ) } ) ) )
+		}else{
+		eff_res = data.frame( do.call( rbind, lapply( c(-4,-4,-4,-4, -4 )/100, function(iii){ ( 1 - iii )^( iiii ) } ) ) )
+		eff_ind = data.frame( do.call( rbind, lapply( c(-3,-3,0,-3, -3  )/100, function(iii){ ( 1 - iii )^( iiii ) } ) ) )
+		}
+		
 	tt = seq(1,length(seq(2015,2060,by=1)))
-	national_residential_gwh.df = mod * data.frame( do.call(rbind,lapply(1:5,function(hhh){ return( 1 + ( ( dat / mod[1,1] - 1 ) * exp( lambda * (tt-1) ) ) ) } ) ) ) * eff
+	national_residential_gwh.df = mod * data.frame( do.call(rbind,lapply(1:5,function(hhh){ return( 1 + ( ( dat / mod[1,1] - 1 ) * exp( lambda * (tt-1) ) ) ) } ) ) ) * eff_res
 
+	for( ss in 1:nrow( national_residential_gwh.df ) ){ national_residential_gwh.df[ss,] = national_residential_gwh.df[ss,] }
+	
 	dat	= iea_electricity_consumption_2000to2015_by_sector_gwh$Commercial[16]
 	mod = national_population.df * ( exp( com.a + com.b * log( national_income.df ) ) ) / 1e6
-	national_commercial_gwh.df = mod * data.frame( do.call(rbind,lapply(1:5,function(hhh){ return( 1 + ( ( dat / mod[1,1] - 1 ) * exp( lambda * (tt-1) ) ) ) } ) ) ) * eff
+	national_commercial_gwh.df = mod * data.frame( do.call(rbind,lapply(1:5,function(hhh){ return( 1 + ( ( dat / mod[1,1] - 1 ) * exp( lambda * (tt-1) ) ) ) } ) ) ) * eff_res
+	for( ss in 1:nrow( national_commercial_gwh.df ) ){ national_commercial_gwh.df[ss,] = national_commercial_gwh.df[ss,]  }		
 			
 	dat	= iea_electricity_consumption_2000to2015_by_sector_gwh$Industry[16]
 	mod = exp( ind.a + ind.b * log( national_gdp.df ) )
-	national_industry_gwh.df = mod * data.frame( do.call(rbind,lapply(1:5,function(hhh){ return( 1 + ( ( dat / mod[1,1] - 1 ) * exp( lambda * (tt-1) ) ) ) } ) ) ) * eff
-
+	national_industry_gwh.df = mod * data.frame( do.call(rbind,lapply(1:5,function(hhh){ return( 1 + ( ( dat / mod[1,1] - 1 ) * exp( lambda * (tt-1) ) ) ) } ) ) ) * eff_ind
+	for( ss in 1:nrow( national_industry_gwh.df ) ){ national_industry_gwh.df[ss,] = national_industry_gwh.df[ss,] }
+	
+	# Check national electricity demand projections
 	windows()
 	aa = c( unlist(national_residential_gwh.df),
 			unlist(national_commercial_gwh.df),
@@ -142,7 +167,8 @@ national.list = lapply( c('PAK','IND'), function(CNT){
 	national_residential_kwh_per_usd.df = 1e6* national_residential_gwh.df / national_gdp.df
 	national_commercial_kwh_per_usd.df = 1e6* national_commercial_gwh.df / national_gdp.df
 	national_industry_kwh_per_usd.df =  1e6* national_industry_gwh.df / national_gdp.df
-
+	
+	# check intensities  
 	windows()
 	aa = c( unlist(national_residential_kwh_per_usd.df),
 			unlist(national_commercial_kwh_per_usd.df),
@@ -157,276 +183,195 @@ national.list = lapply( c('PAK','IND'), function(CNT){
 	legend('top',c('Residential','Commercial','Industry'), lty=1,col=c('green','red','black'),bty='n',cex=0.9)
 	temp = list( national_residential_kwh_per_usd.df, national_commercial_kwh_per_usd.df, national_industry_kwh_per_usd.df )
 	names(temp) = c( 'national_residential_kwh_per_usd.df', 'national_commercial_kwh_per_usd.df', 'national_industry_kwh_per_usd.df' )
-	return( temp )
-	} )
-names(national.list) = c('PAK','IND')
 	
+	return( temp )
+	
+	} )
+	
+# Assume AFG and CHN follow pakistan
+national.list = list( national.list[[1]], national.list[[2]], national.list[[1]], national.list[[1]] ) 	
+names(national.list) = c('PAK','IND','AFG','CHN')	
+	
+### Electricity demands from gridded indicators - using harmonized spatial datasets from Parkinson et al. 2016 A spatially explicit ...	
 # Simulation horizon
 yy = c(2015,seq(2020,2060,by=10))
-res.list = lapply( c(1,2,5), function(ss){ 
-	res2 = bind_cols( lapply( 1:length(yy), function(y){
-		if(ss==1){rr=1}
-		if(ss==2){rr=2}
-		if(ss==5){rr=4}
-		if(yy[y]==2015){yy2=2010}else{yy2=yy[y]}
-		dat.df = data.frame( readRDS( paste('input/harmonized_rcp_ssp_data/water_use_ssp',ss,'_rcp',rr,'_',yy2,'_data.Rda',sep='') ) )
-		names(dat.df)[which(names(dat.df) == paste('xloc',yy2,sep='.'))] = 'xloc'
-		names(dat.df)[which(names(dat.df) == paste('yloc',yy2,sep='.'))] = 'yloc'
-		names(dat.df)[which(names(dat.df) == paste('urban_gdp',yy2,sep='.'))] = 'urban_gdp'
-		names(dat.df)[which(names(dat.df) == paste('rural_gdp',yy2,sep='.'))] = 'rural_gdp'
-		names(dat.df)[which(names(dat.df) == paste('urban_pop',yy2,sep='.'))] = 'urban_pop'
-		names(dat.df)[which(names(dat.df) == paste('rural_pop',yy2,sep='.'))] = 'rural_pop'
-		coordinates(dat.df) = ~ xloc + yloc
-		gridded(dat.df) = TRUE
-		dat.spdf = dat.df
-		proj4string(dat.df) = proj4string(basin.spdf)
-		dat.df = cbind(data.frame(dat.df), over(dat.df,basin.spdf[,which(names(basin.spdf) == 'PID')]))
-		dat.df = dat.df[-1*which(is.na(dat.df$PID)),]
-		hr = n_days * 24
-		utps = do.call( rbind, lapply( 1:length(basin.spdf), function(x){
-			alpha = 0.4
-			tmp = as.matrix( dat.df[ which( as.character(dat.df$PID) == as.character(basin.spdf@data$PID[x]) ), which(grepl('mean_tas',names(dat.df))) ] )
-			pop = unlist( dat.df[ which( as.character(dat.df$PID) == as.character(basin.spdf@data$PID[x]) ), 'urban_pop' ] )
-			tt = sapply( 1:12, function(mm){return( abs( -18 - 273 + sum( tmp[,mm] * pop, na.rm=TRUE ) / sum( pop, na.rm=TRUE ) ) )})
-			tt = tt / sum(tt,na.rm=TRUE)
-			tt[is.nan(tt)]=0
-			tt = alpha * tt + (1-alpha)*hr/8760
-			return(tt)
-			} ) )	
-		rtps = do.call( rbind, lapply( 1:length(basin.spdf), function(x){
-			alpha = 0.4
-			tmp = as.matrix( dat.df[ which( as.character(dat.df$PID) == as.character(basin.spdf@data$PID[x]) ), which(grepl('mean_tas',names(dat.df))) ] )
-			pop = unlist( dat.df[ which( as.character(dat.df$PID) == as.character(basin.spdf@data$PID[x]) ), 'rural_pop' ] )
-			tt = sapply( 1:12, function(mm){return( abs( -18 - 273 + sum( tmp[,mm] * pop, na.rm=TRUE ) / sum( pop, na.rm=TRUE ) ) )})
-			tt = tt / sum(tt,na.rm=TRUE)
-			tt[is.nan(tt)]=0
-			tt = alpha * tt + (1-alpha)*hr/8760
-			return(tt)
-			} ) )	
-		res = data.frame(	unlist( lapply( 1:length(basin.spdf), function(x){ sum( dat.df$urban_gdp[ which( as.character(dat.df$PID) == as.character(basin.spdf@data$PID[x]) ) ], na.rm=TRUE ) } ) ),
-							unlist( lapply( 1:length(basin.spdf), function(x){ sum( dat.df$rural_gdp[ which( as.character(dat.df$PID) == as.character(basin.spdf@data$PID[x]) ) ], na.rm=TRUE ) } ) ) )
-		names(res) = c( paste('urban_gdp',yy[y],sep='.'), paste('rural_gdp',yy[y],sep='.') )
-		modl = sapply( basin.spdf@data$CNTRY_ID, function(x){ if( x == 'IND' ){return('IND')}else{return('PAK')} } )
-		res$urban_municipal_gwh = sapply( 1:length(basin.spdf), function(x){ round( 1e-6 * ( res$urban_gdp[x] ) * ( national.list[[modl[x]]]$national_residential_kwh_per_usd.df + national.list[[modl[x]]]$national_commercial_kwh_per_usd.df )[ paste( 'SSP',ss,sep='' ), as.character( yy[y] ) ] ) } )
-		res$rural_municipal_gwh = sapply( 1:length(basin.spdf), function(x){ round( 1e-6 * ( res$rural_gdp[x] ) * ( national.list[[modl[x]]]$national_residential_kwh_per_usd.df + national.list[[modl[x]]]$national_commercial_kwh_per_usd.df )[ paste( 'SSP',ss,sep='' ), as.character( yy[y] ) ] ) } )
-		res$industry_gwh = sapply( 1:length(basin.spdf), function(x){ round( 1e-6 * ( res$urban_gdp[x] ) * ( sum( res$urban_gdp + res$rural_gdp ) / sum( res$urban_gdp ) ) * national.list[[modl[x]]]$national_industry_kwh_per_usd.df[ paste( 'SSP',ss,sep='' ), as.character( yy[y] ) ] ) } )
-		res = res[,c('urban_municipal_gwh','rural_municipal_gwh','industry_gwh')]
-		res = round( data.frame( cbind( do.call( cbind, lapply( 1:12, function(mm){ return( res$urban_municipal_gwh * utps[,mm] / hr[ mm ] / 1e-3 ) } ) ),
-					 do.call( cbind, lapply( 1:12, function(mm){ return( res$rural_municipal_gwh * rtps[,mm] / hr[ mm ] / 1e-3 ) } ) ),
-					 do.call( cbind, lapply( 1:12, function(mm){ return( res$industry_gwh / 8760 / 1e-3 ) } ) ) ) ), digits = 1 )
-		names(res) = c( paste(paste('urban_municipal_mw',yy[y],sep='.'),seq(1,12),sep='.'), paste(paste('rural_municipal_mw',yy[y],sep='.'),seq(1,12),sep='.'), paste(paste('industry_mw',yy[y],sep='.'),seq(1,12),sep='.') )					
-		return( res )
-		} ) ) 
-	row.names(res2) = basin.spdf@data$PID
-	return(res2)	
-	} )		
-names(res.list) = c('SSP1','SSP2','SSP5')
-elec.list = res.list
-rm(res.list)
-	
-## Water Demands	
+
+# import national manufacturing demand projections 
 national_manufacturing_withdrawal.df = data.frame(read.csv("input/manufacturing_water_demand_results/national/IIASA_water_withdrawal_manufacturing_Static.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T))
 national_manufacturing_return.df = data.frame(read.csv("input/manufacturing_water_demand_results/national/IIASA_water_return_manufacturing_Static.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T))
-res.list = lapply( c(1,2,5), function(ss){ 
-	res2 = bind_cols( lapply( 1:length(yy), function(y){
-		bsn.df=basin.spdf
-		if(ss==1){rr=1}
-		if(ss==2){rr=2}
-		if(ss==5){rr=4}
-		if(yy[y]==2015){yy2=2010}else{yy2=yy[y]}
+
+# National GDP projections for scaling the manufacturing demands
+national_gdp.df = data.frame(read.csv("input/OECD_SSP_GDP_PPP.csv", header=TRUE, sep=",", stringsAsFactors=F, as.is=T)) %>% # in billions
+	filter( Region %in% unique( unlist( strsplit( basin.spdf@data$PID, '_' ) )[ seq( 1, 2*length(basin.spdf@data$PID), by=2 ) ] ) ) %>%
+	dplyr::select( Scenario, Region, paste('X',seq(2015,2060,by=5),sep='') )
+
+# hours in each month
+hr = c(31,28.25,31,30,31,30,31,31,30,31,30,31) * 24 
+
+# go through each ssp and year and create flat dataframe containing the demand parameters
+demands.df = bind_rows( lapply( c(1,2,5), function(ss){ 
+	
+	bind_rows( lapply( 1:length(yy), function(y){
+		
+		# haven't generated the data for each SSP - this is the mapping to the RCPs - could be updated to reflect different RCPs
+		if(ss %in% c( 1,3,4 )){rr=1}
+		if(ss==2){ rr=2 }
+		if(ss==5){ rr=4 }
+		
+		 # 2015 not included in the data so using 2010
+		if( yy[y]==2015 ){ yy2=2010 }else{ yy2=yy[y] }
+		
+		# import the harmonzied gridded data and rename to make generic headings, add PID by overlaying the polygons, and then sum to PID-level
 		dat.df = data.frame( readRDS( paste('input/harmonized_rcp_ssp_data/water_use_ssp',ss,'_rcp',rr,'_',yy2,'_data.Rda',sep='') ) )
-		names(dat.df)[which(names(dat.df) == paste('xloc',yy2,sep='.'))] = 'xloc'
-		names(dat.df)[which(names(dat.df) == paste('yloc',yy2,sep='.'))] = 'yloc'
-		names(dat.df)[which(names(dat.df) == paste('urban_pop',yy2,sep='.'))] = 'urban_pop'
-		names(dat.df)[which(names(dat.df) == paste('rural_pop',yy2,sep='.'))] = 'rural_pop'
-		names(dat.df)[which(names(dat.df) == paste('urban_gdp',yy2,sep='.'))] = 'urban_gdp'
-		names(dat.df)[which(names(dat.df) == paste('rural_gdp',yy2,sep='.'))] = 'rural_gdp'
-		coordinates(dat.df) = ~ xloc + yloc
-		gridded(dat.df) = TRUE
-		dat.spdf = dat.df
-		proj4string(dat.df) = proj4string(bsn.df)
-		dat.df = cbind(data.frame(dat.df), over(dat.df,bsn.df[,which(names(bsn.df) == 'PID')]))
-		dat.df = dat.df[-1*which(is.na(dat.df$PID)),]
-		assign(paste('URBAN_POP',yy[y],sep='.'), unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df$urban_pop[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ) ], na.rm=TRUE ) } ) ) )
-		assign(paste('RURAL_POP',yy[y],sep='.'), unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df$rural_pop[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ) ], na.rm=TRUE ) } ) ) )
-		assign(paste('URBAN_GDP',yy[y],sep='.'), unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df$urban_gdp[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ) ], na.rm=TRUE ) } ) ) )
-		assign(paste('RURAL_GDP',yy[y],sep='.'), unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df$rural_gdp[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ) ], na.rm=TRUE ) } ) ) )
-		URBAN_INC = get(paste('URBAN_GDP',yy[y],sep='.')) / get(paste('URBAN_POP',yy[y],sep='.')); URBAN_INC[is.na(URBAN_INC)] = 0
-		RURAL_INC = get(paste('RURAL_GDP',yy[y],sep='.')) / get(paste('RURAL_POP',yy[y],sep='.')); RURAL_INC[is.na(RURAL_INC)] = 0
+		cols = c( 'xloc', 'yloc', 'urban_pop', 'rural_pop', 'urban_gdp', 'rural_gdp', 'mean_tas', 'urban_withdrawal', 'rural_withdrawal', 'urban_return', 'rural_return' )
+		for( nm in cols ){ 
+			ind = which( grepl( nm, names( dat.df ) ) )
+			if( length( ind ) > 1 ){ nm2 = paste( nm, 1:12,sep='.' )}else{ nm2 = nm }
+			names(dat.df)[ ind ] = nm2 }
+		dat.df = dat.df[,grepl( paste(cols,collapse='|'), names(dat.df) ) ]
+		dat.df = dat.df %>%
+			'coordinates<-'(~xloc+yloc) %>%
+			'gridded<-'(TRUE) %>%
+			'proj4string<-'( proj4string(basin.spdf) )
+		dat.df$PID = unlist( over( dat.df, basin.spdf[,which(names(basin.spdf) == 'PID')] ) )
+		dat.df = data.frame( dat.df ) %>% filter( !is.na( PID ) ) %>% dplyr::select( -xloc, -yloc ) 
 		
-		# Withdrawal and return flow
-		URBAN_WITHDRAWAL = do.call(cbind, lapply( 1:12, function(m){ 1e6* (1/n_days[m]) * data.frame( unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ), which(as.character(names(dat.df)) == paste('urban_withdrawal',yy2,m,sep='.') ) ], na.rm=TRUE ) } ) ) ) } ) )
-		names(URBAN_WITHDRAWAL) = unlist(lapply(1:12,function(m){ paste('URBAN_WITHDRAWAL_m3_per_day',yy[y],m,sep='.') } ) )
-		URBAN_RETURN = do.call(cbind, lapply( 1:12, function(m){ 1e6* (1/n_days[m]) *  data.frame( unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ), which(as.character(names(dat.df)) == paste('urban_return',yy2,m,sep='.') ) ], na.rm=TRUE ) } ) ) ) } ) )
-		names(URBAN_RETURN) = unlist(lapply(1:12,function(m){ paste('URBAN_RETURN_m3_per_day',yy[y],m,sep='.') } ) )
-		RURAL_WITHDRAWAL = do.call(cbind, lapply( 1:12, function(m){ 1e6* (1/n_days[m]) *  data.frame( unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ), which(as.character(names(dat.df)) == paste('rural_withdrawal',yy2,m,sep='.') ) ], na.rm=TRUE ) } ) ) ) } ) )
-		names(RURAL_WITHDRAWAL) = unlist(lapply(1:12,function(m){ paste('RURAL_WITHDRAWAL_m3_per_day',yy[y],m,sep='.') } ) )
-		RURAL_RETURN = do.call(cbind, lapply( 1:12, function(m){ 1e6 * (1/n_days[m]) *  data.frame( unlist( lapply( 1:length(bsn.df), function(x){ sum( dat.df[ which( as.character(dat.df$PID) == as.character(bsn.df@data$PID[x]) ), which(as.character(names(dat.df)) == paste('rural_return',yy2,m,sep='.') ) ], na.rm=TRUE ) } ) ) ) } ) )
-		names(RURAL_RETURN) = unlist(lapply(1:12,function(m){ paste('RURAL_RETURN_m3_per_day',yy[y],m,sep='.') } ) )
-		temp = data.frame( PID = bsn.df@data$PID, get(paste('URBAN_POP',yy[y],sep='.')), get(paste('RURAL_POP',yy[y],sep='.')), get(paste('URBAN_GDP',yy[y],sep='.')), get(paste('RURAL_GDP',yy[y],sep='.')), URBAN_INC, RURAL_INC, URBAN_WITHDRAWAL, URBAN_RETURN, RURAL_WITHDRAWAL, RURAL_RETURN ) 
-		names(temp) = c('PID',paste('URBAN_POP',yy[y],sep='.'),paste('RURAL_POP',yy[y],sep='.'),paste('URBAN_GDP',yy[y],sep='.'),paste('RURAL_GDP',yy[y],sep='.'),paste('URBAN_INC',yy[y],sep='.'),paste('RURAL_INC',yy[y],sep='.'), names(temp)[8:length(names(temp))] )
-		temp = replace(temp,is.na(temp),0)
-		bsn.df = merge(bsn.df, temp, by='PID')
+		elec.df = bind_rows( lapply( 1:12, function( mm ){
+			left_join( 	dat.df %>% dplyr::select( PID, paste( 'mean_tas', mm, sep = '.' ) ),
+						dat.df %>% dplyr::select( PID, urban_pop, rural_pop )  ) %>%
+			rename(tas = paste( 'mean_tas', mm, sep = '.' ) ) %>%
+			group_by( PID ) %>%
+			summarise( 	turb = abs( -18 -273 + sum( tas * urban_pop ) / sum( urban_pop ) ), 	# population weighted temperature
+						trur = abs( -18 -273 + sum( tas * rural_pop ) / sum( rural_pop ) ) ) %>%
+			as.data.frame( ) %>% 
+			mutate( turb = ifelse( is.nan( turb ), 0, turb ), trur = ifelse( is.nan( trur ), 0, trur ) ) %>%
+			mutate( time = mm ) %>%
+			dplyr::select( PID, time, turb, trur ) } ) ) %>%
+			left_join( ., data.frame( time = 1:12, hr = hr ) ) %>% # add the hours in each month
+			group_by( PID ) %>%
+			mutate( turb =  0.4 * turb / sum( turb ) + 0.6 * hr / 8760, # downscaling factor assuming part of load insensitive to temperature
+					trur =  0.4 * trur / sum( trur ) + 0.6 * hr / 8760 ) %>%	
+			as.data.frame( ) %>%
+			mutate( turb = ifelse( is.nan( turb ), 0, turb ), trur = ifelse( is.nan( trur ), 0, trur ) ) %>%		
+			left_join( 	., dat.df %>% # adding gdp and pop for projecting demands based on intensities above
+			dplyr::select( PID, urban_gdp, urban_pop, rural_gdp, rural_pop ) %>%
+			group_by( PID ) %>% summarise_each( funs( sum ) ) %>% # summarise by PID
+			as.data.frame( ) %>%
+			mutate( urban_inc = urban_gdp / urban_pop, rural_inc = rural_gdp / rural_pop )	%>% # don't actually use the per capita income buts it's there in case used as alternative indicator
+			mutate( urban_inc = ifelse( is.nan( urban_inc ), 0, round( urban_inc ) ), 
+					rural_inc = ifelse( is.nan( rural_inc ), 0, round( rural_inc ) ) ) ) %>%
+			left_join( ., data.frame( PID =  basin.spdf@data$PID, country = unlist( strsplit( basin.spdf@data$PID, '_' ) )[ seq( 1, 2*length(basin.spdf@data$PID), by=2 ) ] ) ) %>%	# add countries	
+			left_join( . ,	as.data.frame( national.list )[ paste0( 'SSP', ss ),  ] %>% 
+								gather( parameter, value ) %>% # flatten
+								mutate( country = unlist( strsplit( parameter, '[.]' ) )[ seq( 1, 4*length( parameter ), by = 4 ) ],
+										var = unlist( strsplit( parameter, '[.]' ) )[ seq( 2, 4*length( parameter ), by = 4 ) ],
+										year = unlist( strsplit( parameter, '[.]' ) )[ seq( 4, 4*length( parameter ), by = 4 ) ] ) %>%
+								filter( year == yy[y] ) %>% dplyr::select( country, var, value ) %>%
+								spread( var, value ) ) %>%
+			group_by( PID, time ) %>% # now project the demands using the gdp - might also instead use the per capita demand model
+			summarise( 	urban_municipal_mw = round( 1e-6 * urban_gdp * ( national_residential_kwh_per_usd + national_commercial_kwh_per_usd ) * turb / hr / 1e-3 ),
+						rural_municipal_mw = round( 1e-6 * rural_gdp * ( national_residential_kwh_per_usd + national_commercial_kwh_per_usd ) * trur / hr / 1e-3 ),
+						industry_mw = round( 1e-6 * ( urban_gdp + rural_gdp ) * national_industry_kwh_per_usd / 8760 / 1e-3 ) ) %>%
+			as.data.frame( ) %>% mutate( year = yy[y], scenario = paste0( 'SSP', ss ) ) %>%
+			dplyr::select( scenario, PID, year, time, urban_municipal_mw, rural_municipal_mw, industry_mw )	%>%
+			gather( type, value, urban_municipal_mw, rural_municipal_mw, industry_mw ) %>% 
+			mutate( units = 'MW',  
+					type = ifelse( grepl( 'urban', type ), 'urban_final', ifelse( grepl( 'rural', type ), 'rural_final', 'industry_final' ) ) ) %>%
+			dplyr::select( scenario, PID, type, year, time, value )		
+			
+		# format for water demands
+		dat.df = dat.df[ , ! grepl('mean_tas',names( dat.df )) ] # remove temperature
+		dat.df = dat.df %>% group_by( PID ) %>% 
+			summarise_each( funs( sum ) ) %>%
+			as.data.frame( ) %>%
+			mutate( urban_inc = urban_gdp / urban_pop, rural_inc = rural_gdp / rural_pop )	%>%
+			mutate( urban_inc = ifelse( is.nan( urban_inc ), 0, round( urban_inc ) ), rural_inc = ifelse( is.nan( rural_inc ), 0, round( rural_inc ) ) )
+						
+		# Add manufactruring demands
+		mf.df = rbind( 
+				national_manufacturing_withdrawal.df %>% 
+					filter( Country_Code %in% unique( unlist( strsplit( basin.spdf@data$PID, '_' ) )[ seq( 1, 2*length(basin.spdf@data$PID), by=2 ) ] ) ) %>%
+					filter( Scenario == paste0( 'SSP', ss ) ) %>%
+					rename( scenario = Scenario, country = Country_Code ) %>%
+					mutate( type = 'withdrawal' ) %>%
+					dplyr::select( scenario, country, type, paste0( 'X', yy2  ) ),
+				national_manufacturing_return.df %>% 
+					filter( Country_Code %in% unique( unlist( strsplit( basin.spdf@data$PID, '_' ) )[ seq( 1, 2*length(basin.spdf@data$PID), by=2 ) ] ) ) %>%
+					filter( Scenario == paste0( 'SSP', ss ) ) %>%
+					rename( scenario = Scenario, country = Country_Code ) %>%
+					mutate( type = 'return' ) %>%
+					dplyr::select( scenario, country, type, paste0( 'X', yy2  ) ) ) 
+		names( mf.df )[ ncol( mf.df ) ] = 'value'
+		mf.df$value = round( mf.df$value / 365.25, digits = 2 ) # convert to mcm_per_day
+		mf.df = mf.df %>% spread( type, value )
 		
-		# Manufacturing demands
-		MANUFACTURING_WITHDRAWAL = do.call(cbind, lapply( 1:12, function(m){ data.frame( 1e6* (1/365) * unlist(lapply( 1:length(bsn.df), function(z){if(length(as.numeric(national_manufacturing_withdrawal.df[ which( ( as.character(national_manufacturing_withdrawal.df$Country_Code) == as.character(bsn.df@data$CNTRY_ID[z]) ) & (as.character(national_manufacturing_withdrawal.df$Scenario) == 'SSP2') ) , which(as.character(names(national_manufacturing_withdrawal.df)) == paste('X',yy[y],sep='')) ]))>0){ as.numeric(national_manufacturing_withdrawal.df[ which( ( as.character(national_manufacturing_withdrawal.df$Country_Code) == as.character(bsn.df@data$CNTRY_ID[z]) ) & (as.character(national_manufacturing_withdrawal.df$Scenario) == 'SSP2') ) , which(as.character(names(national_manufacturing_withdrawal.df)) == paste('X',yy[y],sep='')) ]) * ( data.frame(bsn.df[ z, which(as.character(names(bsn.df)) == paste('URBAN_GDP',yy[y],sep='.') ) ]) / sum( data.frame(bsn.df[ which(as.character(bsn.df@data$CNTRY_ID) == as.character(bsn.df@data$CNTRY_ID[z]) ), which(as.character(names(bsn.df)) == paste('URBAN_GDP',yy[y],sep='.') ) ]), na.rm=TRUE ) ) }else{0} } ) ) ) } ) )   
-		MANUFACTURING_RETURN = do.call(cbind, lapply( 1:12, function(m){ data.frame( 1e6* (1/365) * unlist(lapply( 1:length(bsn.df), function(z){if(length(as.numeric(national_manufacturing_return.df[ which( ( as.character(national_manufacturing_return.df$Country_Code) == as.character(bsn.df@data$CNTRY_ID[z]) ) & (as.character(national_manufacturing_return.df$Scenario) == 'SSP2') ) , which(as.character(names(national_manufacturing_return.df)) == paste('X',yy[y],sep='')) ]))>0){ as.numeric(national_manufacturing_return.df[ which( ( as.character(national_manufacturing_return.df$Country_Code) == as.character(bsn.df@data$CNTRY_ID[z]) ) & (as.character(national_manufacturing_return.df$Scenario) == 'SSP2') ) , which(as.character(names(national_manufacturing_return.df)) == paste('X',yy[y],sep='')) ]) * ( data.frame(bsn.df[ z, which(as.character(names(bsn.df)) == paste('URBAN_GDP',yy[y],sep='.') ) ]) / sum( data.frame(bsn.df[ which(as.character(bsn.df@data$CNTRY_ID) == as.character(bsn.df@data$CNTRY_ID[z]) ), which(as.character(names(bsn.df)) == paste('URBAN_GDP',yy[y],sep='.') ) ]), na.rm=TRUE ) ) }else{0} } ) ) ) } ) )   
-		names(MANUFACTURING_WITHDRAWAL) = unlist(lapply(1:12,function(m){ paste('MANUFACTURING_WITHDRAWAL_m3_per_day',yy[y],m,sep='.') } ) ); row.names(MANUFACTURING_WITHDRAWAL) = row.names(bsn.df)
-		names(MANUFACTURING_RETURN) = unlist(lapply(1:12,function(m){ paste('MANUFACTURING_RETURN_m3_per_day',yy[y],m,sep='.') } ) ); row.names(MANUFACTURING_RETURN) = row.names(bsn.df)
-		temp = data.frame(PID = bsn.df@data$PID, MANUFACTURING_WITHDRAWAL, MANUFACTURING_RETURN)
-		temp = replace(temp,is.na(temp),0)
-		bsn.df = merge(bsn.df, temp, by='PID')
+		# national gdp for scaling mf demands
+		gdp.df = national_gdp.df %>% 
+			rename( scenario = Scenario, country = Region ) %>% 
+			mutate( scenario = unlist( strsplit( scenario, '_' ) )[seq(1,3*length(scenario),by=3)] ) %>%
+			dplyr::select( scenario, country, paste0( 'X', yy[y]  ) )
+		names( gdp.df )[ ncol( gdp.df ) ] = 'gdp_national'	
 		
-		res.df = round( data.frame( bsn.df[ , which( grepl('WITHDRAWAL|RETURN',names(bsn.df) ) ) ] ) )
-	
-		return(res.df)
+		# now scale
+		dat.df = dat.df %>% 
+			mutate( country = unlist( strsplit( PID, '_' ) )[seq(1,2*length(PID),by=2)] ) %>%
+			left_join( ., left_join( mf.df, gdp.df ), by = c( 'country' ) ) %>%
+			mutate( manufacturing_withdrawal = round( withdrawal * ( urban_gdp + rural_gdp ) / ( 1e9 * gdp_national ), digits = 3 ) )  %>%
+			mutate( manufacturing_return = round( return * ( urban_gdp + rural_gdp ) / ( 1e9 * gdp_national ), digits = 3 ) ) %>%
+			dplyr::select(  -urban_pop, -urban_gdp, -rural_pop, -rural_gdp, -urban_inc, -rural_inc, -country, -scenario, -return, -withdrawal, -gdp_national )
+		
+		
+		# expand manufacturing withdrawals and retunr flows to months - assuming constant instensity across the year
+		mfw = bind_cols( lapply( 1:12, function( mmm ){ dat.df$manufacturing_withdrawal } ) )	%>% as.data.frame() %>% 'names<-'(paste('manufacturing_withdrawal',1:12,sep='.'))
+		mfr = bind_cols( lapply( 1:12, function( mmm ){ dat.df$manufacturing_return } ) )	%>% as.data.frame() %>% 'names<-'(paste('manufacturing_return',1:12,sep='.'))
+		dat.df = dat.df %>% 
+			dplyr::select( -manufacturing_withdrawal ) %>% cbind( ., mfw ) %>%
+			dplyr::select( -manufacturing_return ) %>% cbind( ., mfr )
+		
+		# flatten the df
+		dat.df = bind_rows( lapply( c( 'urban_withdrawal', 'urban_return', 'rural_withdrawal', 'rural_return', 'manufacturing_withdrawal', 'manufacturing_return'  ), function( tp ){
+			dat.df %>% 
+				dplyr::select( PID, paste( tp, 1:12, sep = '.' ) ) %>%  
+				gather( 'month','value',-PID) %>% 
+				mutate( time = unlist( strsplit( month, '[.]' ) )[ seq(2,2*length(month),by=2) ], type = tp, scenario = paste0( 'SSP', ss ), year = yy[y], value = round( value, digits = 3 ) ) %>%
+				dplyr::select( scenario, PID, type, year, time, value ) 
+				} ) ) 
+		
+		# But the urban and rural withdrawal / return flow data are in million cubic meters per month not per day
+		type2check = c( 'urban_withdrawal', 'urban_return', 'rural_withdrawal', 'rural_return' )
+		dat.df = rbind( dat.df %>% filter( ! type %in% type2check ),
+						dat.df %>% filter( type %in% type2check ) %>% 
+							left_join( ., data.frame( time = as.character( 1:12 ), days = c(31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) ) ) %>%
+							mutate( value = round( value / days, digits = 3 ) ) %>% dplyr::select( -days ) )
+		
+		# add units
+		dat.df$units = 'mcm_per_day'
+		elec.df$units = 'MW'
+		
+		
+		dat.df = rbind( dat.df, elec.df )
+		
+		return( dat.df )
 		
 		} ) )
 		
-	row.names(res2) = basin.spdf@data$PID	
-	return(res2) 
-	} )
-names(res.list) = c('SSP1','SSP2','SSP5')
-wat.list = res.list
-rm(res.list)
-	
-# Irrigation
-nc = nc_open('input/Wada_groundwater_abstraction/pcrglobwb_WFDEI_historical_PIrrWW_monthly_1960_2010.nc4', verbose=FALSE)
-irrigation.stack = stack( 'input/Wada_groundwater_abstraction/pcrglobwb_WFDEI_historical_PIrrWW_monthly_1960_2010.nc4' )
-extent(irrigation.stack) = extent( min( ncvar_get(nc, "longitude") ), max( ncvar_get(nc, "longitude") ), min( ncvar_get(nc, "latitude") ), max( ncvar_get(nc, "latitude") ) )
-proj4string( irrigation.stack ) = proj4string( basin.spdf )
-irrigation.stack = crop( irrigation.stack, extent(buff.sp) )
-names(irrigation.stack) = c( sapply( 1:(nlayers(irrigation.stack)/12), function(yy){ return( paste( ( as.numeric( unlist( strsplit( as.character( as.Date("1901-01-01") + min( ncvar_get(nc, "time") ) ), '-' ) )[1] ) + yy - 1 ), seq(1,12,by=1), sep='.') ) } ) ) 
-irrigation.stack = irrigation.stack[[ c( which(grepl( 'X2010',names(irrigation.stack) )) ) ]] # keep 2010
-nm = names(irrigation.stack)
-irrigation.stack = ( 1e6 * irrigation.stack ) / (1e6 * area(irrigation.stack[[1]]) ) # convert to meters
-nc_close(nc)
-rr = raster()
-res(rr) = 1/16
-proj4string(rr)=proj4string(basin.sp)
-rr = crop(rr, extent(irrigation.stack))
-irrigation.stack = resample(irrigation.stack, rr, method="bilinear")
-irrigation.stack[irrigation.stack[]<0]=0
-names(irrigation.stack) = nm
-irrigation.stack = round( 1e6 * irrigation.stack * area( irrigation.stack[[1]] ) / n_days ) # in m3 per day
-irrw.df = data.frame( do.call( cbind, lapply(1:12, function(m){ unlist( lapply( 1:length(basin.spdf), function(x){ sum( unlist( extract( irrigation.stack[[m]], as(basin.spdf[x,],'SpatialPolygons'), na.rm=TRUE ) ) ) } ) ) })) )
-names(irrw.df) = nm
-row.names(irrw.df) = basin.spdf@data$PID
-irrigation.list = lapply( c('SSP1','SSP2','SSP5'), function(ss){ 
-	if(ss == 'SSP5'){ss='SSP2'}
-	glb_scen = paste(ss,'-Ref-SPA0',sep='' )
-	glb_irr.df = data.frame( read.csv( 'P:/ene.model/data/Water/water_demands/cdlinks_globiom_irrigation.csv', stringsAsFactors = FALSE ) )
-	frc = unlist( lapply( seq(2010,2060,by=10), function(y){ return( glb_irr.df[ which( glb_irr.df$Scenario == glb_scen & glb_irr.df$Region == 'SAS' ), paste( 'X', y, sep = '' ) ] ) } ) )
-	frc = frc / frc[1]
-	if(ss == 'SSP5'){frc[2:length(frc)] = frc[2:length(frc)] * 1.3 }
-	res = do.call( cbind, lapply( frc, function(ff){ return( irrw.df * ff )  } ) )
-	names(res) = unlist(lapply( yy, function(y){ paste( 'IRRIGATION_WITHDRAWAL_m3_per_day', y, 1:12, sep='.') } ) )
-	return(res)
-	} )
-names(irrigation.list) = c('SSP1','SSP2','SSP5')
-
-# Flatten	and combine	
-params = c('withdrawal','return')
-sectors = c('urban','rural','industry')
-mps = data.frame( withdrawal = 'WITHDRAWAL_m3_per_day', return = 'RETURN_m3_per_day', urban = 'URBAN', rural = 'RURAL', industry = 'MANUFACTURING' )
-yrs = yy
-unts = data.frame( withdrawal = 'm3_per_day', return = 'm3_per_day' )
-mnths = seq(1,12,by=1)
-nms = names( wat.list[[ 1 ]] )
-pid = row.names(wat.list[[1]])
-demand.df = bind_rows( lapply( ssps[c(1,2,5)], function(ss){
-	res1 = bind_rows( lapply( params, function(pp){ 
-		res2 = bind_rows( lapply( sectors, function(cc){
-			res3 = bind_rows( lapply( yrs, function(yr){
-				res4 = bind_rows( lapply( mnths, function(mm){
-					res = data.frame( 	scenario = rep(ss,length(pid)),
-										sector = rep(cc,length(pid)),
-										type = rep(pp,length(pid)),
-										pid = pid,
-										year = rep(yr,length(pid)),
-										month = rep(mm,length(pid)),
-										value = round( unlist( wat.list[[ ss ]][ , paste( paste( as.character( unlist( mps[ cc ] ) ), as.character( unlist( mps[ pp ] ) ), sep = '_' ), yr, mm, sep = '.' )  ] ) ),
-										units =  rep( 'm3_per_day', length(pid) ) )
-					return(res)
-					} ) )
-				return(res4)			
-				} ) )
-			return(res3)
-			} ) )	
-		return(res2)
-		} ) )
-	return(res1)
 	} ) )
-		
-# Flatten		
-params = c('electricity')
-sectors = c('urban','rural','industry')
-mps = data.frame( electricity = 'mw', urban = 'urban_municipal', rural = 'rural_municipal', industry = 'industry' )
-unts = data.frame( electricity = 'MW' )
-yrs = yy
-mnths = seq(1,12,by=1)
-nms = names( wat.list[[ 1 ]] )
-pid = row.names(wat.list[[1]])
-demand.df = bind_rows( bind_rows( lapply( ssps[c(1,2,5)], function(ss){
-	res1 = bind_rows( lapply( params, function(pp){ 
-		res2 = bind_rows( lapply( sectors, function(cc){
-			res3 = bind_rows( lapply( yrs, function(yr){
-				res4 = bind_rows( lapply( mnths, function(mm){
-					res = data.frame( 	scenario = rep(ss,length(pid)),
-										sector = rep(cc,length(pid)),
-										type = rep(pp,length(pid)),
-										pid = pid,
-										year = rep(yr,length(pid)),
-										month = rep(mm,length(pid)),
-										value = round( unlist( elec.list[[ ss ]][ , paste( paste( as.character( unlist( mps[ cc ] ) ), as.character( unlist( mps[ pp ] ) ), sep = '_' ), yr, mm, sep = '.' )  ] ), digits=1),
-										units = rep( 'MW', length(pid) ) )
-					return(res)
-					} ) )
-				return(res4)			
-				} ) )
-			return(res3)
-			} ) )	
-		return(res2)
-		} ) )
-	return(res1)
-	} ) ), demand.df )
-				
-params = c('withdrawal')
-sectors = c('irrigation')
-mps = data.frame( withdrawal = 'WITHDRAWAL_m3_per_day', irrigation = 'IRRIGATION' )
-unts = data.frame( withdrawal = 'm3_per_day' )
-yrs = yy
-mnths = seq(1,12,by=1)
-nms = names( irrigation.list[[ 1 ]] )
-pid = row.names(irrigation.list[[1]])
-demand.df = bind_rows( bind_rows( lapply( ssps[c(1,2,5)], function(ss){
-	res1 = bind_rows( lapply( params, function(pp){ 
-		res2 = bind_rows( lapply( sectors, function(cc){
-			res3 = bind_rows( lapply( yrs, function(yr){
-				res4 = bind_rows( lapply( mnths, function(mm){
-					res = data.frame( 	scenario = rep(ss,length(pid)),
-										sector = rep(cc,length(pid)),
-										type = rep(pp,length(pid)),
-										pid = pid,
-										year = rep(yr,length(pid)),
-										month = rep(mm,length(pid)),
-										value = round( unlist( irrigation.list[[ ss ]][ , paste( paste( as.character( unlist( mps[ cc ] ) ), as.character( unlist( mps[ pp ] ) ), sep = '_' ), yr, mm, sep = '.' )  ] ) ),
-										units = rep( 'm3_per_day', length(pid) ) )
-					return(res)
-					} ) )
-				return(res4)			
-				} ) )
-			return(res3)
-			} ) )	
-		return(res2)
-		} ) )
-	return(res1)
-	} ) ), demand.df )
 
-write.csv( demand.df, "input/indus_demands.csv", row.names=FALSE )
+# Harmonize with naming convention used previously - might update later
+demands.df = demands.df %>% 
+	mutate( sector = unlist( strsplit( type, '_') )[seq(1,2*length(type),by=2)] ) %>%
+	mutate( sector = ifelse( sector == 'manufacturing', 'industry', sector ) ) %>%
+	mutate( type = unlist( strsplit( type, '_') )[seq(2,2*length(type),by=2)] ) %>%
+	mutate( type = ifelse( type == 'final', 'electricity', type ) ) %>%
+	dplyr::rename( pid = PID, month = time ) %>%
+	dplyr::select( scenario, sector,  type,  pid,  year,  month, value, units )
 	
-demand.df = read.csv( 'input/indus_demands.csv', stringsAsFactors=FALSE )
+write.csv( demands.df, "input/indus_demands_new.csv", row.names=FALSE )
+	
+demand.df = read.csv( 'input/indus_demands_new.csv', stringsAsFactors=FALSE )
+
 # Plot the results
+
 windows()
 p1 = layout( matrix( c(5,5,1,2,3,4),3,2,byrow=TRUE ), widths = c(0.3,0.3), heights= c(0.05,0.3,0.3) )
 hh = 1
@@ -445,15 +390,15 @@ for( tp in c('withdrawal','electricity') )
 		names(tmp) = unique(demand.df$scenario)		
 		row.names(tmp) = unique(demand.df$year)	
 		
-		if( tp == 'withdrawal'){ yl = c('million m3 per day'); fc = 1e6 }
+		if( tp == 'withdrawal'){ yl = c('million m3 per day'); fc = 1 }
 		if( tp == 'electricity'){ yl = c('Gigawatts'); fc = 1e3 }
 		
 		matplot( as.numeric( row.names(tmp) ), tmp/fc, type = 'l', col = c('green','blue','orange'), xlab = 'year', lty = 1, main = paste( s, tp, sep = ' - ' ), ylab = yl )
 			
 		}
 	
-	}	
+	}
+	
 par(mar=c(0,0,0,0))	
 plot.new()
-legend('bottom',legend=c('SSP1','SSP2','SSP3'),col = c('green','blue','orange'),lty=1,bty='n',ncol=3)	
-	
+legend('bottom',legend=c('SSP1','SSP2','SSP5'),col = c('green','blue','orange'),lty=1,bty='n',ncol=3)		

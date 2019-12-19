@@ -1,5 +1,5 @@
 
-# Existing ground and surface water pumping capacity
+# Existing ground and surface water pumping capacity for urban, rural and industry sectors - note the irrigation capacity is sized in crop_yields.r
 
 require(rgeos)
 require(rgdal)
@@ -97,201 +97,69 @@ frac = c( unlist( lapply( 1:length(basin.spdf), function(x){
 # Data frame output by PID
 groundwater_fraction.df = data.frame( node = basin.spdf@data$PID, fraction = frac )
 
-# Adriano approach
-# keep only PID variable of spatialpolygon
-# basin_pid.spdf <- basin.spdf[,1]
-# # make a raster with gwfraction locations and pid information
-# pid_gwfrac.rs = rasterize(basin_pid.spdf,gwfraction.stack)
-# # merge value and pid raster
-# gwfrac_pid.stack = stack(gwfraction.stack,total.stack,pid_gwfrac.rs)
+## MANUAL UPDATE BASED ON KNOWN FRACTIONS
 
-# #same as groundwater_fraction.df
-# gw_frac.df = as.data.frame(gwfrac_pid.stack,stringsAsFactor = F) %>%
-  # dplyr::rename(node = layer.3_PID) %>% 
-  # filter(!is.na(node)) %>% 
-  # group_by(node) %>% 
-  # summarise(frac = sum(layer.1*layer.2)/sum(layer.2) ) 
+# IND_4 - uses 72% groundwater, see https://www.youtube.com/watch?v=RjsThobgq7Q&t=306s about 5 minutes in 
+groundwater_fraction.df$fraction[ groundwater_fraction.df$node == 'IND_4' ] = 0.72
 
-# pids_original <- basin.spdf@data$PID
-# basin.spdf@data$PID = as.character( paste( 'PID', as.character( 1:length(basin.spdf) ), sep = '_' ) )
-# pids_after <- basin.spdf@data$PID
-# 
-# map_PID <- data.frame(pids_original,pids_after)
-# 
-# pid_mapping = function(db){
-#   db <- db %>% 
-#     left_join(map_PID %>% dplyr::rename(node = pids_original)) %>% 
-#     select(-node) %>% 
-#     dplyr::rename(node = pids_after) %>% 
-#     select(node,everything())
-#   return(db)
-# }
-# 
-# gw_frac.df<- pid_mapping(gw_frac.df) %>% 
-#   mutate(node = as.character(node))
+# AFG uses 2.8/15.8=18%, see 'Irrigation Outreach in Afghanistan: Exposure to Afghan Water Security Challenges'
+groundwater_fraction.df$fraction[ grepl( 'AFG', groundwater_fraction.df$node ) ] = 0.18
 
-demand.df = read.csv( "input/indus_demands.csv", stringsAsFactors=FALSE )
-# Just keep the current SSP and add level and commodity to match core GAMS model
-demand.df = demand.df[ which( demand.df$scenario == 'SSP2' ), c( which( names( demand.df ) != 'scenario' ) ) ]
-demand.df$commodity = NA
-demand.df$commodity[ which( demand.df$type %in% c('withdrawal','return') ) ] = 'freshwater'
-demand.df$commodity[ which( demand.df$type %in% c('electricity') ) ] = 'electricity'
-demand.df$level = NA
-demand.df$level[ which(  demand.df$type %in% c('withdrawal') & demand.df$sector == 'irrigation' ) ] = 'irrigation_field'
-demand.df$level[ which(  demand.df$type %in% c('electricity') & demand.df$sector == 'irrigation' ) ] = 'irrigation_final'
-demand.df$level[ which(  demand.df$type %in% c('withdrawal','electricity') & demand.df$sector == c('urban') ) ] = 'urban_final'
-demand.df$level[ which(  demand.df$type %in% c('withdrawal','electricity') & demand.df$sector == c('industry') ) ] = 'industry_final'
-demand.df$level[ which(  demand.df$type %in% c('withdrawal','electricity') & demand.df$sector == 'rural' )  ] = 'rural_final'
-demand.df$level[ which(  demand.df$type %in% c('return') & demand.df$sector == 'urban' ) ] = 'urban_waste'
-demand.df$level[ which(  demand.df$type %in% c('return') & demand.df$sector == 'industry' ) ] = 'industry_waste'
-demand.df$level[ which(  demand.df$type %in% c('return') & demand.df$sector == 'rural' ) ] = 'rural_waste'
-demand.df = demand.df[ , c( 'pid', 'level', 'commodity', 'year', 'month', 'value' ) ]
-names(demand.df) = c('node','level','commodity','year_all','time', 'value0' ) 
 
-# Multiply the fraction by the historical demands to calibrate historical gw demands
-gw_demand.df <- demand.df %>% 
+# Now use the groundwater fraction to set the historical capacities based on the historical demand level
+demand.df = read.csv( "input/indus_demands_new.csv", stringsAsFactors=FALSE ) %>%
+	filter( scenario == 'SSP2' ) %>%
+	filter( year == 2015, sector != 'crop', units != 'MW' ) %>%
+	mutate( commodity = 'freshwater' ) %>%
+	dplyr::select( commodity, sector, type, pid, year, month, value )
+demand.df = rbind( 
+	demand.df %>% filter( type == 'withdrawal' ) %>% mutate( level = ifelse( sector == 'urban', 'urban_final', ifelse( sector == 'rural', 'rural_final', 'industry_final' ) ) ),
+	demand.df %>% filter( type == 'return' ) %>% mutate( level = ifelse( sector == 'urban', 'urban_waste', ifelse( sector == 'rural', 'rural_waste', 'industry_waste' ) ) )
+	) %>% dplyr::rename( node = pid, year_all = year, time = month ) %>% dplyr::select( node, level, commodity, year_all, time, value )
+	
+	
+# Multiply the fraction by the historical demands to calibrate historical gw demands 
+gw_demand.df = demand.df %>% # demand.df is already in mcm_per_day
   filter(year_all == 2015) %>% 
   filter(commodity == 'freshwater') %>% 
-  filter(level %in% c('industry_final','rural_final','urban_final','irrigation_field')) %>% 
+  filter(level %in% c('industry_final','rural_final','urban_final')) %>% 
   left_join(groundwater_fraction.df,by = c("node")) %>% 
-  mutate(value = value0 * frac) %>% 
-  mutate(tec = if_else(level == 'irrigation_field','irrigation_gw_diversion',
-                       if_else(level == 'urban_final','urban_gw_diversion',
-                               if_else(level == 'rural_final','rural_gw_diversion','CHECK_MISSING')))) %>% 
-  select(node,tec,year_all,time,value)
- 
-# Surface water determined using inverse of groundwater fractions 
-sw_demand.df <- demand.df %>% 
-  filter(year_all == 2015) %>% 
-  filter(commodity == 'freshwater') %>% 
-  filter(level %in% c('industry_final','rural_final','urban_final','irrigation_field')) %>% 
-  left_join(groundwater_fraction.df,by = c("node")) %>% 
-  mutate(value = value0 * (1-frac)) %>% 
-  mutate(tec = if_else(level == 'irrigation_field','irrigation_sw_diversion',
-                       if_else(level == 'urban_final','urban_sw_diversion',
-                               if_else(level == 'rural_final','rural_sw_diversion','CHECK_MISSING')))) %>% 
-  select(node,tec,year_all,time,value) 
+  mutate(value = value * fraction ) %>%
+  dplyr::select( node, level, commodity, year_all, time, value )
     
+# Surface water determined using inverse of groundwater fractions 
+sw_demand.df = demand.df %>% 
+  filter(year_all == 2015) %>% 
+  filter(commodity == 'freshwater') %>% 
+  filter(level %in% c('industry_final','rural_final','urban_final')) %>% 
+  left_join(groundwater_fraction.df,by = c("node")) %>% 
+  mutate(value = value * (1-fraction)) %>%
+  dplyr::select( node, level, commodity, year_all, time, value ) 
+   
 # Estimate capacity of groundwater diversions - units in MCM per day
 # Lacking historical data on vintaging, historical capacities
-# Are distributed uniformly across 2000, 2010 and 2015 
-gw_capacity.df = do.call( rbind, lapply( unique(gw_demand.df$node), function( nn ){ 
-
-	do.call( rbind, lapply( unique(gw_demand.df$tec), function( tt ){
+gw_capacity.df = gw_demand.df %>% 
+	group_by( node, level ) %>%
+	summarise( value = round( max( value ) * 1.1, digits = 3 ) ) %>%
+	as.data.frame( ) %>%
+	mutate( tec = paste( unlist( strsplit( level, '_' ) )[seq(1,2*length(level),by=2)], 'gw_diversion', sep = '_' ), year_all = 2015, units = 'mcm_per_day' ) %>%
+	select( node, tec, year_all, value, units )
+sw_capacity.df = sw_demand.df %>% 
+	group_by( node, level ) %>%
+	summarise( value = round( max( value ) * 1.1, digits = 3 ) ) %>%
+	as.data.frame( ) %>%
+	mutate( tec = paste( unlist( strsplit( level, '_' ) )[seq(1,2*length(level),by=2)], 'sw_diversion', sep = '_' ), year_all = 2015, units = 'mcm_per_day' ) %>%
+	select( node, tec, year_all, value, units )	
 	
-		res = max( gw_demand.df$value[ which( gw_demand.df$tec == tt & gw_demand.df$node == nn ) ] ) * ( 1 + 0.1 ) # 10% reserve margin
-		
-		df = data.frame( 	node = rep( nn, 2 ), 
-							tec = rep( tt, 2 ), 
-							year_all = c( 2010, 2015 ), 
-							value = round( rep( res / 2, 2 ) / 1e6, digits = 2 ),
-							units = rep( 'mcm_per_day', 2 )	)
-		
-		return(df)
-		
-		} ) )
-		
-	} ) )
-	
-# Repeat for surface water	
-sw_capacity.df = do.call( rbind, lapply( unique(sw_demand.df$node), function( nn ){ 
-
-	do.call( rbind, lapply( unique(sw_demand.df$tec), function( tt ){
-	
-		res = max( sw_demand.df$value[ which( sw_demand.df$tec == tt & sw_demand.df$node == nn ) ] ) * ( 1 + 0.1 ) # 10% reserve margin
-		
-		df = data.frame( 	node = rep( nn, 2 ), 
-							tec = rep( tt, 2 ), 
-							year_all = c( 2010, 2015 ), 
-							value = round( rep( res / 2, 2 ) / 1e6, digits = 2 ),
-							units = rep( 'mcm_per_day', 2 )	)
-		
-		return(df)
-		
-		} ) )
-		
-	} ) )
-
-
-# Extraction technologies that aggregate the diversions (enables constraining the total extraction)	
-
-gw_capacity_extract.df = do.call( rbind, lapply( unique(gw_demand.df$node), function( nn ){ 
-
-	do.call( rbind, lapply( unique(gw_demand.df$year_all), function( yy ){
-
-		res = sum( gw_capacity.df$value[ which( gw_capacity.df$node == nn & gw_capacity.df$year_all == yy ) ] )
-		
-		df = data.frame( 	node = nn, 
-							tec = 'gw_extract', 
-							year_all = yy, 
-							value = res,
-							units = 'mcm_per_day'	)
-		
-		return(df)
-	
-		} ) )
-	
-	} ) )
-		
-sw_capacity_extract.df = do.call( rbind, lapply( unique(sw_demand.df$node), function( nn ){ 
-
-	do.call( rbind, lapply( unique(sw_demand.df$year_all), function( yy ){
-
-		res = sum( sw_capacity.df$value[ which( sw_capacity.df$node == nn & sw_capacity.df$year_all == yy ) ] )
-		
-		df = data.frame( 	node = nn, 
-							tec = 'sw_extract', 
-							year_all = yy, 
-							value = res,
-							units = 'mcm_per_day'	)
-		
-		return(df)
-	
-		} ) )
-	
-	} ) )
-				
 ### Append historical capacity csv to include freshwater extration capacities
 
 # historical capacity csv
 historical_capacity.df1 = read.csv( "input/historical_new_cap.csv", stringsAsFactors=FALSE ) 
 ind = which( historical_capacity.df1$tec %in% sw_capacity.df$tec | historical_capacity.df1$tec %in% gw_capacity.df$tec ) 
-if( length( ind ) > 0 ){ historical_capacity.df1 = historical_capacity.df1[ -1 * ind, ] }
-historical_capacity.df1 = rbind( 	historical_capacity.df1, 
+if( length( ind ) > 0 ){ historical_capacity.df1 = historical_capacity.df1[ -1 * ind, ] } # remove any existing entries 
+historical_capacity.df1 = rbind( 	historical_capacity.df1,
 									sw_capacity.df, 
-									sw_capacity_extract.df,
-									gw_capacity.df,
-									gw_capacity_extract.df )
+									gw_capacity.df  )
 write.csv( 	historical_capacity.df1, 
 			"input/historical_new_cap.csv", 
 			row.names = FALSE )
-
-# irr_gw.df <- as.data.frame(stack(irrigation.stack,pid_gwfrac.rs),stringsAsFactor = F )  %>% 
-#   dplyr::rename(PID = layer_PID) %>% 
-#   filter(!is.na(PID)) %>% 
-#   group_by(PID) %>% 
-#   summarise(tot = sum(PID) ) %>% 
-#   left_join(gw_frac.df) %>% 
-#   mutate(irr_gw = tot*frac)
-# 
-# ind_gw.df <- as.data.frame(stack(industrial.stack,pid_gwfrac.rs),stringsAsFactor = F ) %>% 
-#   dplyr::rename(PID = layer_PID) %>% 
-#   filter(!is.na(PID)) %>% 
-#   group_by(PID) %>% 
-#   summarise(tot = sum(PID) ) %>% 
-#   left_join(gw_frac.df) %>% 
-#   mutate(ind_gw = tot*frac)
-# 
-# dom_gw.df <- as.data.frame(stack(domestic.stack,pid_gwfrac.rs),stringsAsFactor = F ) %>% 
-#   dplyr::rename(PID = layer_PID) %>% 
-#   filter(!is.na(PID)) %>% 
-#   group_by(PID) %>% 
-#   summarise(tot = sum(PID) ) %>% 
-#   left_join(gw_frac.df) %>% 
-#   mutate(dom_gw = tot*frac)
-# 
-# out.df <- irr_gw.df %>% 
-#   left_join(ind_gw.df) %>% left_join(dom_gw.df) %>% 
-#   select(PID,irr_gw,ind_gw,dom_gw)
-
-write.csv(gw_demand.df, file.path(getwd(),'input/Wada_groundwater_abstraction/gw_punping_urb_rur_irr.csv') ,row.names = F)
