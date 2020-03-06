@@ -604,8 +604,8 @@ final_energy_by_use.df = bind_rows( lapply(  scen_chk, function( sc ){
             filter( commodity == 'electricity' & level == 'urban_final' |
                       commodity == 'electricity' & level == 'irrigation_final' |
                       commodity == 'electricity' & level == 'rural_final'|
-                      commodity == 'electricity' & level == 'industrial_final'|
-                      grepl('diversion',tec)),
+                      commodity == 'electricity' & level == 'industry_final'|
+                      commodity == 'electricity' & grepl('diversion',tec)),
           data.frame( res.list[[ sc ]]$ACT ),
           by = c( 'node', 'tec', 'vintage', 'year_all', 'mode', 'time' ) ) %>% 
     filter(year_all <= 2050) %>% 
@@ -651,9 +651,8 @@ elec_demand = demand_fixed.shiny %>% filter(year_all>2015 & year_all <2060 & com
 final_energy_by_use.shiny = final_energy_by_use.df %>% select(node,scenario,time,type,level,year_all,value,unit) %>% 
   bind_rows(elec_demand %>% select(node,scenario,type,level,year_all,value,unit) ) %>% select(-level) %>% 
   group_by_("node"  ,   "year_all", "time" ,  "scenario", "type" ,'unit') %>% 
-  summarise(value = sum(value)) %>% ungroup() %>% 
-  mutate(value = (value * 30 *24* 1e-6), #conversion from MWmonth to TWh
-         unit = 'TWh')
+  summarise(value = sum(value)) %>% ungroup() 
+
 type.shiny = unique(c(type.shiny,as.character( unique(final_energy_by_use.shiny$type)) ))
 
 

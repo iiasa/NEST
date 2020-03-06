@@ -74,9 +74,12 @@ fraction_value = fraction_reduction * ( 1 - exp( -1 * saturation_rate * ( year_a
 fdf = data.frame( year_all = year_all[ year_all >= baseyear ], frc = c( 0, fraction_value ) )
 fdf$frc = fdf$frc * fraction_reduction / fdf$frc[ which( fdf$year_all == saturation_year ) ]
 mountain_nodes = c( bcus[ grepl( 'IND|CHN|AFG', bcus ) ], 'PAK_7', 'PAK_8', 'PAK_11', 'PAK_13')
+
+frc = c(0.2,0.2,0.2,0.5,0.8, 0.9, 0.9, 0.8, 0.6, 0.5, 0.4, 0.3)
+fdf.df = data.frame(time = time,frc = as.numeric(frc), stringsAsFactors = F)
 if (!REDUCE_RUNOFF){}else{
-	demand.par = demand.par %>% left_join( ., fdf ) %>%
-		mutate( value = if_else( level == 'inflow' & node %in% mountain_nodes, round( value * (1 - frc), digits = 1 ), value ) ) %>%
+	demand.par = demand.par %>% left_join(fdf.df ) %>%
+		mutate( value = if_else( level == 'inflow', value * (1-frc), value ) ) %>%
 		dplyr::select( -frc )
 	}
 
@@ -845,9 +848,9 @@ if(sc == 'irr_Nexus'){
   
 	} # end if
 
-if(grepl('extreme',sc)){
+if(grepl('extreme|glacier',sc)){
   
-  bound_activity_lo.par = bound_activity_lo.par %>% filter(!grepl('canal|lining|river',tec))
+  # bound_activity_lo.par = bound_activity_lo.par %>% filter(!grepl('canal|lining|river',tec))
   
   bound_storage_lo.par = bound_storage_lo.par %>% mutate(value = 0)
   
@@ -867,7 +870,7 @@ if(grepl('extreme',sc)){
   
   gw_extract_agri_cap.df = base_gw.df %>%
     filter(node != 'PAK_13') %>% 
-    group_by(node,tec,year_all) %>% summarise(value = sum(value)) %>% ungroup()
+    group_by(node,tec,year_all) %>% summarise(value = sum(value) * mean(frc)) %>% ungroup()
   bound_total_capacity_up.par = bound_total_capacity_up.par %>% rbind(
     gw_extract_agri_cap.df
   )

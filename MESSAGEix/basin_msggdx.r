@@ -24,9 +24,6 @@ require( gdxrrw )
 
 tic()
 
-# Location of input data
-setwd( 'P:/is-wel/indus/message_indus' )
-
 # Use ixmp? Takes time to upload - can choose option to debug w/o ixmp
 use_ixmp = FALSE
 
@@ -54,7 +51,13 @@ baseyear = 2015 # last historical year
 lastyear = last(year_all)
 
 # load data inputs
-source( paste( indus_ix_path, 'basin_msggdx_load_inputs.r', sep = '/' ), verbose = FALSE ) 
+if( default_data )
+{ load(paste0(indus_ix_path,"/NEST_Indus_SSP2_RPC6.RData") )
+} else {
+  # Location of input data
+  setwd( 'P:/is-wel/indus/message_indus' )
+  source( paste( indus_ix_path, 'basin_msggdx_load_inputs.r', sep = '/' ), verbose = FALSE ) 
+}
 
 # load technology parameters using 'basin_msggdx_technologies.r' and add to formatted list
 source( paste( indus_ix_path, 'basin_msggdx_technologies.r', sep = '/' ) ) 

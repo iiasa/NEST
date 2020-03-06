@@ -4896,7 +4896,7 @@ nuclear_ot = list( 	nodes = nds,
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "nuclear_ot",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 1e-6	)
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	)
 
 					)
 					
@@ -5066,7 +5066,7 @@ nuclear_cl =  list( 	nodes = nds,
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "nuclear_cl",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 1e-6	)
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	)
 
 					)
 				
@@ -5187,7 +5187,7 @@ nuclear_sw = list( 	nodes = nds,
 					historical_new_capacity = hist_new_cap.df[hist_new_cap.df$tec == "nuclear_sw",],
 					
 					# data.frame(node,inv_tec,year)
-					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2030,2040,2050,2060), value = 1e-6	)
+					bound_new_capacity_up = expand.grid( 	node = nds, year_all = c(2020,2030,2040,2050,2060), value = 1e-6	)
 
 					)
 					
@@ -12808,7 +12808,8 @@ for( ii in seq_along( crop_names ) )
 		  mutate(irrigation_yield = if_else(is.na(irrigation_yield),0,irrigation_yield),
 		         `rain-fed_yield` = if_else(is.na(`rain-fed_yield` ),0,`rain-fed_yield` ) ) %>% 
 		  mutate(value = irrigation_yield) %>% 
-		  dplyr::select(node,value)
+		  dplyr::select(node,value) %>% 
+		  group_by(node) %>% summarise(value = max(value)) %>% ungroup()
 		tmp = tmp %>% expand(tmp,time) %>% 
 			left_join(	crop_tech_data.df %>% 
 						filter(crop == crop_names[ii] & par == 'crop_coef') %>% 
