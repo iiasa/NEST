@@ -119,7 +119,7 @@ if (IND_TREAT){
 										IND_2 = 225000 ) * 0.404 / 1e6 # Chenab - convert to Mha
 
 	# Simplified approach: Bound irrigation withdrawals to historical levels in the sub-basins of India impacted by the policy
-	historical_capacity.df1 = read.csv( "input/historical_new_cap.csv", stringsAsFactors=FALSE )
+	historical_capacity.df1 = hist_new_cap.df
 	bound_total_capacity_up.par = bind_rows( bound_total_capacity_up.par,
 
 		bind_rows( lapply( year_all[ year_all > baseyear ], function( yyy ){
@@ -410,7 +410,7 @@ if (SDG6 & sc != baseline0){
 	## Maintain surface withdrawal capacity to limit expanded surface allocation (surface water fully allocated in Indus ie.., no room for expanded use) 
 	  
 	  # Get the historical capacity of surface water diversions and then bound total capacity of sw_extract to prevent further expansion
-	  historical_capacity.df1 = read.csv( "input/historical_new_cap.csv", stringsAsFactors=FALSE )
+	  historical_capacity.df1 = hist_new_cap.df
 	  sw_extract_cap.df = historical_capacity.df1 %>%
 	    filter( grepl( 'sw_diversion', tec ) ) %>%
 	    filter(node != 'PAK_13') %>%

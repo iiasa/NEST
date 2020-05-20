@@ -7,6 +7,8 @@
 require( raster )
 require( dplyr )
 require( tidyr )
+
+# Local location of indus ix model - MAKE SURE TO ADD TO SYSTEM ENVIRONMENT VARIABLES
 indus_ix_path = Sys.getenv("INDUS_IX_PATH")
 
 ## data source ##

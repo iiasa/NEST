@@ -27,9 +27,6 @@ tic()
 # Use ixmp? Takes time to upload - can choose option to debug w/o ixmp
 use_ixmp = FALSE
 
-# Local location of indus ix model - MAKE SURE TO ADD TO SYSTEM ENVIRONMENT VARIABLES
-indus_ix_path = Sys.getenv("INDUS_IX_PATH")
-
 # Location of GAMS - need to add to system environemtn variables but can't change from remote desktop :(
 gams_path = 'C:/GAMS/win64/24.9'
 

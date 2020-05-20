@@ -167,16 +167,34 @@ cost_by_technology.shiny = cost_by_technology.df %>% select(node,year_all,scenar
 type.shiny = as.character(unique(cost_by_technology.shiny$type))
 
 if (shiny_mode){} else {
+# country averages do not consider 0 values for years with no investment ina  specific sector, 
+  # therefore overal average is slightly higher than the Indus one
+  
+  df_cost0 = cost_by_technology.df %>% 
+    filter( year_all %in% c(2020,2030,2040,2050) ) %>% 
+    group_by( year_all, country, type, scenario ) %>% 
+    summarise( investment = sum( invc ), operational = sum(varc + fixc) ) %>% ungroup()
+  
+  zero_cost_matrix = crossing(year_all = unique(df_cost0$year_all),
+                              country = unique(df_cost0$country),
+                              type = unique(df_cost0$type),
+                              scenario = unique(df_cost0$scenario)) %>% 
+    mutate(investment2 = 0, operational2 = 0)
   
   df_cost = cost_by_technology.df %>% 
     filter( year_all %in% c(2020,2030,2040,2050) ) %>% 
     group_by( year_all, country, type, scenario ) %>% 
     summarise( investment = sum( invc ), operational = sum(varc + fixc) ) %>% ungroup() %>% 
+    right_join(zero_cost_matrix) %>% 
+    mutate(investment = if_else(!is.na(investment), investment, investment2),
+           operational = if_else(!is.na(operational), operational, operational2)) %>% 
     group_by( country, type, scenario ) %>% 
     summarise( investment = mean( investment ),operational = mean( operational ) ) %>% 
     gather('cost','value',investment,operational) %>% 
-    mutate(value =  1e-3 * value ) %>% 
-    mutate(scenario = gsub('.*MSGoutput_','',gsub('\\.gdx.*','',scenario)) )
+    # mutate(value =  1e-3 * value ) %>% 
+    mutate(scenario = gsub('_',' ', gsub('.*MSGoutput_','',gsub('\\.gdx.*','',scenario) ) ) ) %>% 
+    group_by(country,type,scenario) %>% 
+    summarise(value = sum(value)) %>% ungroup()
   
   pdf( 'indus_invest.pdf', width = 6, height = 6 ) 
   
