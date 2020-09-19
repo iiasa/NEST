@@ -10,15 +10,15 @@ This repositories contains the code of the two key models linked in this framewo
 - The Community Water Model, a hydrological model (see [Full documentation and open repository](https://cwatm.iiasa.ac.at/) )
 - MESSAGEix, dynamic systems-optimization Integrated Assessment Model (see [Documentation](https://messageix.iiasa.ac.at/) )
 
-# Updated in NEST v1.1
+# Updates in NEST v1.1
 
-this version contains minor updated to the model policy setup and input data to align with the scenario describen in the following paper:
+This version contains minor updates to the model policy setup and input data to align with the scenario described in the following paper:
 
 "Trans-boundary cooperation facilitates sustainable development in the Indus Basin", Vinca et el. (2020), NAture Sustainability, in review.
 
-updates include:
-- water and irrigation tchnologies used for three main scenarios (BAU, SDG and SDG-coop)
-- edit of `multiple_scenario_new.r` to include new scenarios
+Updates include:
+- water and irrigation technologies used for three main scenarios (BAU, SDG and SDG-coop)
+- edits to `multiple_scenario_new.r` to include new scenarios
 - fixed bugs that were overwriting local paths and input data
 
 # Data
