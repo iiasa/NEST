@@ -8,15 +8,12 @@ library(broom)
 require( rgdal )
 library(rgeos)
 
-# Location of input data
-setwd( 'P:/is-wel/indus/message_indus' )
 gams_path = 'C:/GAMS/win64/24.9'
 # Local location of indus ix model - MAKE SURE TO ADD TO SYSTEM ENVIRONMENT VARIABLES
-indus_ix_path = Sys.getenv("INDUS_IX_PATH")
 setwd(indus_ix_path)
 # Basin analyzed
 basin = 'Indus'
-basin.spdf = readOGR( paste( "P:/is-wel/indus/message_indus", 'input', sep = '/' ), paste( basin, 'bcu', sep = '_' ), verbose = FALSE )
+# basin.spdf = readOGR( paste( "P:/is-wel/indus/message_indus", 'input', sep = '/' ), paste( basin, 'bcu', sep = '_' ), verbose = FALSE )
 
 if (!exists('shiny_mode')) shiny_mode = F
 
@@ -193,7 +190,7 @@ if (shiny_mode){} else {
     gather('cost','value',investment,operational) %>% 
     # mutate(value =  1e-3 * value ) %>% 
     mutate(scenario = gsub('_',' ', gsub('.*MSGoutput_','',gsub('\\.gdx.*','',scenario) ) ) ) %>% 
-    group_by(country,type,scenario) %>% 
+    group_by(country,type,scenario,cost) %>% 
     summarise(value = sum(value)) %>% ungroup()
   
   pdf( 'indus_invest.pdf', width = 6, height = 6 ) 
@@ -1321,8 +1318,8 @@ if (shiny_mode){} else {
 
 # get basin shape and simplify them + get centroids
 
-extra_basin.spdf =  readOGR( paste( "P:/is-wel/indus/message_indus", 'input', sep = '/' ), paste0( 'indus_extra_basin_rip_countries'), verbose = FALSE )
-extra_basin.spdf = gSimplify(extra_basin.spdf,0.05)
+# extra_basin.spdf =  readOGR( paste( "P:/is-wel/indus/message_indus", 'input', sep = '/' ), paste0( 'indus_extra_basin_rip_countries'), verbose = FALSE )
+# extra_basin.spdf = gSimplify(extra_basin.spdf,0.05)
 
 sbasin.spdf = gSimplify(basin.spdf,0.03)
 node_data = basin.spdf@data %>% mutate(DOWN = if_else(is.na(DOWN),'SINK',as.character(DOWN) )) %>% 

@@ -471,7 +471,7 @@ if( EMISS & sc != baseline0 ){
 	require( gdxrrw )
 	igdx( gams_path ) ## Set based on local machine	
 	tmp = rgdx( paste( paste( indus_ix_path, '/model/output/', sep=''), 
-								paste( 	'MSGoutput_no_planned_hydro.gdx', sep = '' ), sep = '' ), 
+	                   paste( 	'MSGoutput_no_planned_hydro.gdx', sep = '' ), sep = '' ), 
 								list( name = 'EMISS', form = "sparse" ) )
 	names(tmp$uels) = tmp$domains
 	rs = data.frame( tmp$val )
