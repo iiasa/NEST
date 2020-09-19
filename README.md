@@ -1,14 +1,25 @@
-# NEST v1.0
-The Nexus Solutions Tool (NEST) v1.0 is a new open modeling platform that integrates multi-scale energy-water-land resource optimization with distributed hydrological modeling. This approach provides insights into the vulnerability of water, energy and land resources to future socioeconomic and climatic change and how multi-sectoral policies, technological solutions and investments can improve the resilience and sustainability of transformation pathways. 
+# NEST v1.1
+The Nexus Solutions Tool (NEST) v1.1 is a new open modeling platform that integrates multi-scale energy-water-land resource optimization with distributed hydrological modeling. This approach provides insights into the vulnerability of water, energy and land resources to future socioeconomic and climatic change and how multi-sectoral policies, technological solutions and investments can improve the resilience and sustainability of transformation pathways. 
 
-Detailed description is avaialble at Vinca et al. (2019) _Geoscientific Model Development_
-[https://doi.org/10.5194/gmd-2019-134](https://doi.org/10.5194/gmd-2019-134)
+Detailed description is avaialble at Vinca et al. (2020) _Geoscientific Model Development_
+[https://doi.org/10.5194/gmd-13-1095-2020](https://doi.org/10.5194/gmd-13-1095-2020)
 
 ## Content
 This repositories contains the code of the two key models linked in this framework:
 
 - The Community Water Model, a hydrological model (see [Full documentation and open repository](https://cwatm.iiasa.ac.at/) )
 - MESSAGEix, dynamic systems-optimization Integrated Assessment Model (see [Documentation](https://messageix.iiasa.ac.at/) )
+
+# Updated in NEST v1.1
+
+this version contains minor updated to the model policy setup and input data to align with the scenario describen in the following paper:
+
+"Trans-boundary cooperation facilitates sustainable development in the Indus Basin", Vinca et el. (2020), NAture Sustainability, in review.
+
+updates include:
+- water and irrigation tchnologies used for three main scenarios (BAU, SDG and SDG-coop)
+- edit of `multiple_scenario_new.r` to include new scenarios
+- fixed bugs that were overwriting local paths and input data
 
 # Data
 Due to data sharing restrictions, procesed data used as model input is included in `MESSAGEix\NEST_Indus_SSP2_RPC6.RData`
